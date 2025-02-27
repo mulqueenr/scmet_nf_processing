@@ -150,7 +150,8 @@ process ADAPTER_TRIM {
 	label 'amethyst'
 
 	input:
-		tuple path(read1), path(read2)
+		path(read1)
+		path(read2)
 	output:
 		tuple val("$sample_name"), path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
 		path("*.trim_report.log"), emit: trim_log
