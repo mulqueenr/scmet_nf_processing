@@ -41,7 +41,7 @@ process BCL_TO_FASTQ_INIT {
 	//Assumes Y151;I10;U16;Y151 sequencing cycles unless specified as input parameter
 	//Assumed ACTGGTAGAT as i7 index unless specified as input parameter
 	//TODO This container should be updated to be in the SIF and not local run
-	cpus 200
+	cpus 50
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 
 	input:
@@ -83,7 +83,7 @@ process GENERATE_GEM_WHITELIST {
 	//Take GEM count output from initial Bcl splitting, 
 	//generate a new sample sheet for per cell splitting with bcl-convert
 	//NEED TO FIX WHITELIST LOCATION, EITHER COPY OR REQUIRE A POINTER TO WHERE CELLRANGER IS INSTALLED
-	cpus 200
+	cpus 50
 	label 'amethyst'
 	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.cellranger}:/cellranger/"
   	publishDir "${params.outdir}/samplesheet", mode: 'copy', overwrite: true, pattern: "samplesheet_gemidx.csv"
@@ -108,7 +108,7 @@ process GENERATE_GEM_WHITELIST {
 process BCL_TO_FASTQ_ON_WHITELIST { 
 	//Generate cell level Fastq Files from BCL Files and generated white list
 	//TODO This container should be updated to be in the SIF and not local run
-	cpus 200
+	cpus 50
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 
 	input:
@@ -252,7 +252,7 @@ process CNV_CLONES {
 	publishDir "${params.outdir}/cnv_calling", mode: 'copy', pattern: "*{tsv,rds}"
 	publishDir "${params.outdir}/plots/cnv", mode: 'copy', pattern: "*pdf"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
-	cpus 100
+	cpus 50
 
 	input:
 		path bams
