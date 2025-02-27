@@ -304,22 +304,23 @@ process AMETHYST_PROCESSING {
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
-		(fq1, fq2) = Channel.fromPath(params.flowcellDir) \
+		sc_bams = 
+		Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
-		| BCL_TO_FASTQ_ON_WHITELIST 
-
-	// ADAPTER TRIM, ALIGN, MARK DUP, CNV CALLING
-		sc_bams = ADAPTER_TRIM(fq1,fq2) \
+		| BCL_TO_FASTQ_ON_WHITELIST \
+		| ADAPTER_TRIM \
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
 
+/*
+
 	//CNV CLONE CALLING
-		clone_metadata = sc_bams | CNV_CLONES
+		clone_metadata =  | CNV_CLONES
 
 	//AMETHYST CLONE CALLING
 	//METHYLTREE CLONE CALLING
-
+*/
 }
 
 /*
