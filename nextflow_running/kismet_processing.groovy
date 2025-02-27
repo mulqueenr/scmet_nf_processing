@@ -177,7 +177,7 @@ process ALIGN_BSBOLT {
 	input:
 		tuple val(sample_name),path(read1),path(read2)
 	output:
-		tuple val(${sample_name}),path("*.bam")
+		tuple val("$sample_name"),path("*.bam")
 		path("*.bsbolt.log"), emit: bsbolt_log
 	script:
 		"""
@@ -202,7 +202,7 @@ process MARK_DUPLICATES {
 	input:
 		tuple val(sample_name),path(bam)
 	output:
-		tuple val(${sample_name}),path("*bbrd.bam")
+		tuple val("$sample_name"),path("*bbrd.bam")
 		path("*markdup.log"), emit: markdup_log
 	script:
 		"""
@@ -225,7 +225,7 @@ process METHYLATION_CALL {
 	input:
 		tuple val(sample_name), path(bam)
 	output:
-		tuple val(${sample_name}),path("*sam")
+		tuple val("$sample_name"),path("*sam")
 		path("*.metcall.log"), emit: metcall_log
 
 	script:
