@@ -7,7 +7,7 @@ nextflow.enable.dsl=2
 
 // Script parameters
 params.flowcellDir = "/volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome"
-params.outname = "250130_10xMET_231"
+params.outname = "250130_10xMET_231_nftest"
 params.outdir = "/volumes/USR2/Ryan/projects/10x_MET/250130_10xmet_231_nf"
 params.src = "/volumes/USR2/Ryan/projects/10x_MET/scmet_nf_processing/src"
 params.cell_try="5000" //Based on expected cell count from library generation
@@ -26,7 +26,7 @@ log.info """
 		Output Prefix : ${params.outname}
 		NF Working Dir : ${workflow.launchDir}
 		Output Directory : ${params.outdir}
-        i7 Index Library Split : ${params.i7_idx}
+		i7 Index Library Split : ${params.i7_idx}
 		Cellranger ATAC install : ${params.cellranger}
 		Split out Cell ID for N= ${params.cell_try} cells.
 		================================================
@@ -134,7 +134,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
         --bcl-num-compression-threads \$task_cpus \\
         --bcl-num-decompression-threads \$task_cpus \\
 		--bcl-only-matched-reads true \\
-        --sample-sheet ${gem_whitelist} \\
+        --sample-sheet $gem_whitelist \\
         --no-lane-splitting true \\
         --output-directory . \\
         --force
@@ -323,15 +323,21 @@ workflow {
 }
 
 /*
-default run:
-nextflow actseq.nf \
+example run
+
+cd /volumes/USR2/Ryan/projects/10x_MET #move to project directory
+git clone https://github.com/mulqueenr/scmet_nf_processing #pull github repo
+
+source activate #ot use more recent version of java
+
+nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 -resume \
 -with-report \
---flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2023/231228_RM_WGD_ACT/231229_VH00219_560_AAFF2CWM5 \
---outname 231228_RM_WGD_ACT \
---plate 1,2,3,4 \
---platform echo \
---outdir /volumes/seq/projects/wgd/231228_RM_WGD_ACT
+--flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome \
+--outname 250130_10xMET_231_nftest \
+--outdir ./experiments/250130_10xmet_231_nf
+
+
 */
 
 
