@@ -89,7 +89,7 @@ process GENERATE_GEM_WHITELIST {
   	publishDir "${params.outdir}/samplesheet", mode: 'copy', overwrite: true, pattern: "samplesheet_gemidx.csv"
 
 	input:
-		tuple path(gem_idx), path(flowcellDir)
+		tuple gem_idx, flowcellDir
 	output:
 		tuple path("samplesheet_gemidx.csv"), path(flowcellDir)
 	script:
@@ -112,7 +112,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 
 	input:
-		tupple path(gem_whitelist),path(flowcellDir)
+		tupple gem_whitelist,flowcellDir
 	output:
 		tuple path("*_R1_001.fastq.gz"),path("*_R2_001.fastq.gz")
     script:
@@ -134,7 +134,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
         --bcl-num-compression-threads \$task_cpus \\
         --bcl-num-decompression-threads \$task_cpus \\
 		--bcl-only-matched-reads true \\
-        --sample-sheet $gem_whitelist \\
+        --sample-sheet ${gem_whitelist} \\
         --no-lane-splitting true \\
         --output-directory . \\
         --force
@@ -150,10 +150,9 @@ process ADAPTER_TRIM {
 	label 'amethyst'
 
 	input:
-		tuple path(read1), path(read2)
+		tuple read1, read2
 	output:
-		tuple val(${sample_name}),
-				path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
+		tuple val(${sample_name}),path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
 		path("*.trim_report.log"), emit: trim_log
 	script:
 		def sample_name = read1.baseName
@@ -176,7 +175,7 @@ process ALIGN_BSBOLT {
 	//TODO This container should be updated to be in the SIF and not local run
 
 	input:
-		tuple val(sample_name),path(read1),path(read2)
+		tuple sample_name,read1,read2
 	output:
 		tuple val(${sample_name}),path("*.bam")
 		path("*.bsbolt.log"), emit: bsbolt_log
@@ -201,7 +200,7 @@ process MARK_DUPLICATES {
 	label 'amethyst'
 
 	input:
-		tuple val(sample_name),path(bam)
+		tuple sample_name,bam
 	output:
 		tuple val(${sample_name}),path("*bbrd.bam")
 		path("*markdup.log"), emit: markdup_log
@@ -224,7 +223,7 @@ process METHYLATION_CALL {
 	label 'amethyst'
 
 	input:
-		tuple val(sample_name), path(bam)
+		tuple sample_name, bam
 	output:
 		tuple val(${sample_name}),path("*sam")
 		path("*.metcall.log"), emit: metcall_log
@@ -324,11 +323,11 @@ workflow {
 
 /*
 example run
+source activate #to use more recent version of java
 
 cd /volumes/USR2/Ryan/projects/10x_MET #move to project directory
 git clone https://github.com/mulqueenr/scmet_nf_processing #pull github repo
 
-source activate #ot use more recent version of java
 
 nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 -resume \
