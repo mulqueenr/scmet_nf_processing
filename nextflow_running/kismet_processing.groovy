@@ -52,12 +52,12 @@ process BCL_TO_FASTQ_INIT {
 		"""
 		#Generate samplesheet
 
-        echo [Settings], > SampleSheet.csv
-        echo CreateFastqForIndexReads,1 >> SampleSheet.csv
-        echo OverrideCycles,${params.sequencing_cycles} >> SampleSheet.csv
-        echo [Data], >> SampleSheet.csv
-        echo Sample_ID,index >> SampleSheet.csv
-        echo ${params.outname},${params.i7_idx} >> SampleSheet.csv
+        echo '[Settings],' > SampleSheet.csv
+        echo 'CreateFastqForIndexReads,1' >> SampleSheet.csv
+        echo 'OverrideCycles,${params.sequencing_cycles}' >> SampleSheet.csv
+        echo '[Data],' >> SampleSheet.csv
+        echo 'Sample_ID,index' >> SampleSheet.csv
+        echo '${params.outname},${params.i7_idx}' >> SampleSheet.csv
 
         #Run initial bcl convert and count gem indexes to determine whitelist for splitting
         task_cpus=\$(expr ${task.cpus} / 3)
