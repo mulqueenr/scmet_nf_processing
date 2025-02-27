@@ -153,7 +153,7 @@ process ADAPTER_TRIM {
 		tuple path(read1),path(read2)
 	output:
 		tuple val("$sample_name"), path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
-		path("*.trim_report.log"), emit: trim_log
+		//path("*.trim_report.log"), emit: trim_log
 	script:
 		def sample_name = read1.baseName
 		"""
@@ -178,7 +178,7 @@ process ALIGN_BSBOLT {
 		tuple val(sample_name),path(read1),path(read2)
 	output:
 		tuple val("$sample_name"),path("*.bam")
-		path("*.bsbolt.log"), emit: bsbolt_log
+		//path("*.bsbolt.log"), emit: bsbolt_log
 	script:
 		"""
 		bsbolt Align \\
@@ -203,7 +203,7 @@ process MARK_DUPLICATES {
 		tuple val(sample_name),path(bam)
 	output:
 		tuple val("$sample_name"),path("*bbrd.bam")
-		path("*markdup.log"), emit: markdup_log
+		//path("*markdup.log"), emit: markdup_log
 	script:
 		"""
 		samtools sort -m 10G -n $bam | \\
@@ -226,7 +226,7 @@ process METHYLATION_CALL {
 		tuple val(sample_name), path(bam)
 	output:
 		tuple val("$sample_name"),path("*sam")
-		path("*.metcall.log"), emit: metcall_log
+		//path("*.metcall.log"), emit: metcall_log
 
 	script:
 	"""
