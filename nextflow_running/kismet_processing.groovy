@@ -8,7 +8,7 @@ nextflow.enable.dsl=2
 // Script parameters
 params.flowcellDir = "/volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome"
 params.outname = "250130_10xMET_231_nftest"
-params.outdir = "/volumes/USR2/Ryan/projects/10x_MET/250130_10xmet_231_nf"
+params.outdir = "/volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf"
 params.src = "/volumes/USR2/Ryan/projects/10x_MET/scmet_nf_processing/src"
 params.cell_try="5000" //Based on expected cell count from library generation
 params.i7_idx="ACTGGTAGAT" //i7 Index (See i7 Indexes in 10xmet_design tab)
@@ -334,9 +334,7 @@ nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 -resume \
 -with-report \
 --flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome \
---outname 250130_10xMET_231_nftest \
---outdir ./experiments/250130_10xmet_231_nf
-
+--outname 250130_10xMET_231_nftest
 
 */
 
