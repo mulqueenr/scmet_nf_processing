@@ -89,7 +89,7 @@ process GENERATE_GEM_WHITELIST {
   	publishDir "${params.outdir}/samplesheet", mode: 'copy', overwrite: true, pattern: "samplesheet_gemidx.csv"
 
 	input:
-		tuple gem_idx, flowcellDir
+		tuple path(gem_idx), path(flowcellDir)
 	output:
 		tuple path("samplesheet_gemidx.csv"), path(flowcellDir)
 	script:
@@ -112,7 +112,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 
 	input:
-		tupple gem_whitelist,flowcellDir
+		tuple path(gem_whitelist),path(flowcellDir)
 	output:
 		tuple path("*_R1_001.fastq.gz"),path("*_R2_001.fastq.gz")
     script:
@@ -150,9 +150,10 @@ process ADAPTER_TRIM {
 	label 'amethyst'
 
 	input:
-		tuple read1, read2
+		tuple path(read1), path(read2)
 	output:
-		tuple val(${sample_name}),path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
+		tuple val(${sample_name}),
+				path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
 		path("*.trim_report.log"), emit: trim_log
 	script:
 		def sample_name = read1.baseName
@@ -175,7 +176,7 @@ process ALIGN_BSBOLT {
 	//TODO This container should be updated to be in the SIF and not local run
 
 	input:
-		tuple sample_name,read1,read2
+		tuple val(sample_name),path(read1),path(read2)
 	output:
 		tuple val(${sample_name}),path("*.bam")
 		path("*.bsbolt.log"), emit: bsbolt_log
@@ -200,7 +201,7 @@ process MARK_DUPLICATES {
 	label 'amethyst'
 
 	input:
-		tuple sample_name,bam
+		tuple val(sample_name),path(bam)
 	output:
 		tuple val(${sample_name}),path("*bbrd.bam")
 		path("*markdup.log"), emit: markdup_log
@@ -223,7 +224,7 @@ process METHYLATION_CALL {
 	label 'amethyst'
 
 	input:
-		tuple sample_name, bam
+		tuple val(sample_name), path(bam)
 	output:
 		tuple val(${sample_name}),path("*sam")
 		path("*.metcall.log"), emit: metcall_log
