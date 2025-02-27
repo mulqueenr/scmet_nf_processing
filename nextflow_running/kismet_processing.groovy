@@ -282,7 +282,7 @@ process AMETHYST_PROCESSING {
 	input:
 		tuple val(sample_name), path(bam)
 	output:
-		tuple val(${sample_name}),path("*sam")
+		tuple val(${sample_name})
 		path("*.metcall.log"), emit: metcall_log
 
 	script:
