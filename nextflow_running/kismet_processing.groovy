@@ -164,8 +164,8 @@ process ADAPTER_TRIM {
 	script:
 		"""
 		/tools/bin/cutadapt \\
-		-j 1 \
-		-a AGATCGGAAGAGCACAC -A CTGTCTCTTATACACAT \
+		-j 1 \\
+		-a AGATCGGAAGAGCACAC -A CTGTCTCTTATACACAT \\
 		-U 10 -u 10 \\
 		-o ${cellid}.R1_001.trim.fastq.gz \\
 		-p ${cellid}.R2_001.trim.fastq.gz \\
