@@ -317,11 +317,18 @@ workflow {
 		| GENERATE_GEM_WHITELIST \
 		| BCL_TO_FASTQ_ON_WHITELIST
 
+	//Pair fq1 and fq2 output
         fq1.map { tuple( it.simpleName, it ) }.set{fq1}
+		
 		fq2.map { tuple( it.simpleName, it ) }.set{fq2}
-		//| ADAPTER_TRIM \
-		//| ALIGN_BSBOLT \
-		//| MARK_DUPLICATES
+
+		fqs = fq1
+		.combine( fq2, by: 0 )
+
+		fqs \
+		| ADAPTER_TRIM 
+		| ALIGN_BSBOLT \
+		| MARK_DUPLICATES
 
 /*
 
