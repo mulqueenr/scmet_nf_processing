@@ -130,7 +130,8 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 	input:
 		tuple path(gem_whitelist),path(flowcellDir)
 	output:
-		tuple path("*_R{1,2}_001.fastq.gz")
+		path("*_R1_001.fastq.gz")
+		path("*_R2_001.fastq.gz")
     script:
 		"""
         #Run final bcl convert to split fastq out per cell
@@ -159,8 +160,7 @@ process ADAPTER_TRIM {
 	input:
 		tuple path(read1),path(read2)
 	output:
-		path("*.R1_001.trim.fastq.gz") into read1
-		path("*.R2_001.trim.fastq.gz") into read2
+		tuple path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
 		//path("*.trim_report.log"), emit: trim_log
 	script:
 		def sample_name = read1.baseName
@@ -311,15 +311,16 @@ process AMETHYST_PROCESSING {
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
+		(fq1,fq2) =
 		Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
 		| BCL_TO_FASTQ_ON_WHITELIST
 
 		fqs = 
-		read1
+		fq1
 			.sort
-			.merge(read2.sort)
+			.merge(fq2.sort)
 			.view()
 		
 		//| ADAPTER_TRIM \
