@@ -369,5 +369,3 @@ nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 
 */
 
-singularity exec --no-home --pid -B /volumes --bind /volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf/logs:/var/log/bcl-convert /volumes/USR2/Ryan/projects/10x_MET/src/amethyst.sif /bin/bash /volumes/USR2/Ryan/projects/10x_MET/work/26/0836b15530c568ac3c3205c13edc80/.command.run nxf_trace
-
