@@ -145,6 +145,11 @@ process BCL_TO_FASTQ_ON_WHITELIST {
         --no-lane-splitting true \\
         --output-directory . \\
         --force
+
+		#rename files so simpleName works better
+		for file in *R1*fastq.gz; do mv \"\$file\" \"\${file/_R1/.R1}\"; done
+		for file in *R2*fastq.gz; do mv \"\$file\" \"\${file/_R2/.R2}\"; done
+
 		"""
 }
 
@@ -169,7 +174,8 @@ process ADAPTER_TRIM {
 		-U 10 -u 10 \\
 		-o ${cellid}.R1_001.trim.fastq.gz \\
 		-p ${cellid}.R2_001.trim.fastq.gz \\
-		$read1 $read2 >> ${cellid}.trim_report.log 2>> ${cellid}.trim_report.log
+		$read1 \\
+		$read2 >> ${cellid}.trim_report.log 2>> ${cellid}.trim_report.log
 		"""
 }
 
