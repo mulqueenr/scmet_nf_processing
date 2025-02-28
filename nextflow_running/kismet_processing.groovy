@@ -54,17 +54,18 @@ process BCL_TO_FASTQ_INIT {
 	//Generate Undetermined Fastq Files from BCL Files.
     //Count GEM indexes and generate a white list for splitting
 	//Assumes Y151;I10;U16;Y151 sequencing cycles unless specified as input parameter
-	//Assumed ACTGGTAGAT as i7 index unless specified as input parameter
-	//TODO This container should be updated to be in the SIF and not local run
+	//bcl-convert requires write access to "/var/logs/bcl-convert", so we just bind a dummy one
+	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.outdir}/logs:/var/log/bcl-convert"
+	label 'amethyst'
 	cpus 50
-	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
-
 	input:
 		path flowcellDir
 	output:
 		tuple path("initial_gem_idx.txt"), path(flowcellDir)
     script:
 		"""
+		source /container_src/container_bashrc
+		mamba activate base
 		#Generate samplesheet
 
         echo '[Settings],' > SampleSheet.csv
@@ -109,6 +110,8 @@ process GENERATE_GEM_WHITELIST {
 		tuple path("samplesheet_gemidx.csv"), path(flowcellDir)
 	script:
 	"""
+	source /container_src/container_bashrc
+	mamba activate base
 	seq_cycles=\$(echo '${params.sequencing_cycles}' | sed 's/U/I/' ) #convert U to I for final cell output
     #make gem specific samplesheet
     python /src/splitcells_whitelist_generator.py \\
@@ -125,14 +128,16 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 	//Generate cell level Fastq Files from BCL Files and generated white list
 	//TODO This container should be updated to be in the SIF and not local run
 	cpus 50
-	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
-
+	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.outdir}/logs:/var/log/bcl-convert"
+	label 'amethyst'
 	input:
 		tuple path(gem_whitelist),path(flowcellDir)
 	output:
 		path("*.fastq.gz")
     script:
 		"""
+		source /container_src/container_bashrc
+		mamba activate base
         #Run final bcl convert to split fastq out per cell
         task_cpus=\$(expr ${task.cpus} / 3)
         bcl-convert \\
@@ -168,7 +173,10 @@ process ADAPTER_TRIM {
 		//path("*.trim_report.log"), emit: trim_log
 	script:
 		"""
-		/volumes/USR2/Ryan/.local/bin/cutadapt \\
+		source /container_src/container_bashrc
+		mamba activate base
+
+		cutadapt \\
 		-j 1 \\
 		-a AGATCGGAAGAGCACAC -A CTGTCTCTTATACACAT \\
 		-U 10 -u 10 \\
@@ -193,7 +201,9 @@ process ALIGN_BSBOLT {
 		//path("*.bsbolt.log"), emit: bsbolt_log
 	script:
 		"""
-		bsbolt Align \\
+		source /container_src/container_bashrc
+		mamba activate base
+		python3 -m bsbolt Align \\
 		-F1 $read1 \\
 		-F2 $read2 \\
 		-t 1 -OT 1 \\
@@ -214,10 +224,13 @@ process MARK_DUPLICATES {
 	input:
 		tuple val(cellid),path(bam)
 	output:
-		tuple val("$cellid"),path("*bbrd.bam")
+		path("*bbrd.bam")
 		//path("*markdup.log"), emit: markdup_log
 	script:
-		"""
+	"""
+		source /container_src/container_bashrc
+		mamba activate base
+
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
 		samtools sort -m 10G | \\
@@ -237,13 +250,15 @@ process METHYLATION_CALL {
 	input:
 		tuple val(cellid), path(bam)
 	output:
-		tuple val("$cellid"),path("*sam")
+		tuple path("*h5")
 		//path("*.metcall.log"), emit: metcall_log
 
 	script:
 	"""
-    samtools index $bam
-    bsbolt CallMethylation \\
+	source /container_src/container_bashrc
+	mamba activate base
+	samtools index $bam
+    python3 -m bsbolt CallMethylation \\
     -I $bam \\
     -O $cellid \\
     -ignore-ov -verbose \\
@@ -272,6 +287,8 @@ process CNV_CLONES {
 		path("*.scCNA.tsv")
 	script:
 		"""
+		source /container_src/container_bashrc
+		mamba activate base
 		Rscript /src/copykit_cnv_clones.nf.R \\
 		--input_dir . \\
 		--output_prefix ${params.outname} \\
@@ -297,24 +314,15 @@ process AMETHYST_PROCESSING {
 
 	script:
 	"""
-    samtools index $bam
-    bsbolt CallMethylation \\
-    -I $bam \\
-    -O $cellid \\
-    -ignore-ov -verbose \\
-    -min 1 -t 1 -CG \\
-    -DB ${params.ref_index} >> ${cellid}.bsbolt.metcall.log 2>> ${cellid}.bsbolt.metcall.log
-
-	python /src/premethyst_cgmap_to_h5.py \\
-	--input ${sample_name}.CG.map.gz
-
+	source /container_src/container_bashrc
+	mamba activate base
 	"""
 }
 
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
-		fq = Channel.fromPath(params.flowcellDir) \
+		sc_bams = Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
 		| BCL_TO_FASTQ_ON_WHITELIST \
@@ -325,11 +333,15 @@ workflow {
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
 
+	//CNV CLONE CALLING
+		sc_bams \
+		| CNV_CLONES
 
+	//METHYLATION PROCESSING
+		sc_bams \
+		| METHYLATION_CALL
 /*
 
-	//CNV CLONE CALLING
-		clone_metadata =  | CNV_CLONES
 
 	//AMETHYST CLONE CALLING
 	//METHYLTREE CLONE CALLING
@@ -340,6 +352,11 @@ workflow {
 example run
 source activate #to use more recent version of java
 
+#first need to make the output dir and the log directory for bcl-convert
+outdir="/volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf"
+mkdir -p ${outdir}
+mkdir -/ ${outdir}/logs
+
 cd /volumes/USR2/Ryan/projects/10x_MET #move to project directory
 git clone https://github.com/mulqueenr/scmet_nf_processing #pull github repo
 
@@ -347,7 +364,8 @@ nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 -resume \
 -with-report \
 --flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome \
---outname 250130_10xMET_231_nftest
+--outname 250130_10xMET_231_nftest \
+--outdir $outdir
 
 */
 

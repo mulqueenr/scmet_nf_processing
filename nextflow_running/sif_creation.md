@@ -75,12 +75,15 @@ sudo chmod 666 /var/run/docker.sock
 #sudo docker save fd1d8f58e8ae -o ubuntu.tar #save image as tar
 #sudo singularity build ubuntu.sif docker-archive://ubuntu.tar #convert tar to sif to act as local bootstrap
 
+#download cellranger
+curl -o cellranger-arc-2.0.2.tar.gz "https://cf.10xgenomics.com/releases/cell-arc/cellranger-arc-2.0.2.tar.gz?Expires=1740790536&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA&Signature=oZX8JrjWnv3brVMUvUZ3pZ3VIGNNdk34lt3FqxHd7cEg0VhVpRecXIs0GbBY~Mbr1SdM1cAw183HwCU-MzjIqgwBB-PdRBr02kmYnSzlHMJJO5wFZNM90lYCxA2EpGSIR1ll6dntzD6CsUqCI8ZrFK2CXWIBEozyAa6A2wU~CGK-Lk07mBMyvvFOKk0Rkrsa2Hs5GG7XJ0O-Lsbb8pAWSWAJD02IByJRKblMSqrCrE~Gh8aGrIFqCkKC7nd66VDs0iLSbPSRPVdQH4pFYkNmTrbjoxpStv8d6C5ce01OUNc0eizAMpB72Hv2v7aKjyTiesJM1yA3UUv48n5w3UAlAg__"
+
 ```
 
 # Build amethyst sandbox
 ```bash
-sudo singularity build --sandbox amethyst2/ docker://ubuntu:latest
-sudo singularity shell --writable amethyst2/
+sudo singularity build --sandbox amethyst_pre/ docker://ubuntu:latest
+sudo singularity shell --writable amethyst_pre/
 
 
 # %post
@@ -98,7 +101,13 @@ zlib1g-dev \
 parallel \
 nano \
 libfontconfig1-dev \
-libtiff-dev
+libtiff-dev \
+zcat \
+screen \
+libncurses-dev
+
+#fancy colors
+apt-get -o Dpkg::Progress-Fancy="1" install alpine-pico
 
 # download, install, and update miniconda3
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -113,7 +122,7 @@ conda install -y -c conda-forge mamba # general dependencies
 
 eval "$(mamba shell hook --shell bash)"
 mamba activate
-mamba shell init
+mamba shell init --shell bash --root-prefix=~/.local/share/mamba
 source ~/.bashrc
 
 #mamba installs pip
@@ -124,6 +133,21 @@ pip install h5py numpy argparse pybedtools pandas scipy tables
 mamba install -y -c bioconda bwa samtools bedtools
 mamba install -y -c conda-forge parallel
 mamba install -y -c conda-forge r r-devtools
+
+#install cutadapt
+apt install -y cutadapt
+
+#install bsbolt
+pip install -y bsbolt
+
+#install bcl-convert #might need to move or install to different directory for portability?
+#download from website https://dashboard.my.illumina.com/softwaredownload
+mkdir -p /usr/bin/bcl-convert
+mv bcl-convert-4.3.6-2.el7.x86_64.rpm /usr/bin/bcl-convert
+cd /usr/local/bin/bcl-convert
+apt-get install -y alien dpkg-dev debhelper build-essential
+alien bcl-convert-4.3.6-2.el7.x86_64.rpm
+dpkg --instdir /usr/bin/bcl-convert -i bcl-convert_4.3.6-3_amd64.deb
 
 #install R packages
 R --slave -e 'install.packages("Seurat",repos="http://cran.us.r-project.org")'
@@ -149,6 +173,7 @@ R --slave -e 'install.packages(c("GeneNMF","magrittr","ape","tidyverse"),repos="
 R --slave -e 'BiocManager::install(c("ggtree","universalmotif"))'
 R --slave -e 'BiocManager::install(c("BSgenome.Hsapiens.UCSC.hg38"))'
 R --slave -e 'install.packages(c("patchwork"),repos="http://cran.us.r-project.org")'
+R --slave -e 'install.packages(c("ggseqlogo"),repos="http://cran.us.r-project.org")'
 
 #predownload the hg38 ref data
 wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_43/gencode.v43.annotation.gtf.gz
@@ -167,37 +192,70 @@ pip install jupyterlab
 pip install h5py numpy argparse pybedtools pandas scipy tables
 python -m ipykernel install --user --name=MethylTree
 
+pip install biopython
+
+#install samtools
+apt-get install 
+wget https://github.com/samtools/samtools/releases/download/1.21/samtools-1.21.tar.bz2
+tar -xvf samtools-1.21.tar.bz2
+cd samtools-1.21
+./configure --prefix=/usr/local/bin/samtools-1.21
+make
+make install
 ```
 
+
 ```bash
-sudo singularity build amethyst2.sif amethyst2/ 
+sudo singularity shell --writable amethyst_pre/
+
+sudo singularity build amethyst_pre.sif amethyst_pre/ 
+singularity shell amethyst_pre.sif
+
 ```
 
 # then build with proper env variables preloaded
-
 amethyst.def
 ```bash
 Bootstrap: localimage
-From: /home/ubuntu/amethyst2.sif
+From: /home/ubuntu/amethyst_pre
 
 %environment
-# set up all essential environment variables
-	export PATH=/opt/miniconda3/bin:$PATH
-	conda init 2>/dev/null
-	source ~/.bashrc
+echo """
+To activate 	
+source /container_src/container_bashrc
+mamba activate base
+"""
 
 %files
   gencode.v43.annotation.gtf.gz /container_ref/gencode.v43.annotation.gtf.gz
-  MethylTree /container_src/MethylTree
+  /home/ubuntu/cellranger-arc-2.0.2/lib/python/atac/barcodes/737K-arc-v1.txt.gz /container_ref/737K-arc-v1.txt.gz
+  MethylTree /opt/miniconda3/condabin/envs/MethylTree
+  /home/ubuntu/.bashrc /container_src/container_bashrc
 
+%help
+    This container has all R libraries for amethyst processing
+	Also has
+		-MethylTree
+		-bcl-convert
+		-samtools
+		-cutadapt
+	To activate enter the following two lines. 	
+	source /container_src/container_bashrc
+	mamba activate base
 %labels
     Author Ryan Mulqueen
-    Version v0.3
-    MyLabel Amethyst Container with MethylTree
+    Version v0.4
+    MyLabel Amethyst Container for kismet processing v1.2
 ```
 
+## Tester!!
 ```bash
 sudo singularity build amethyst.sif amethyst.def
+singularity shell amethyst.sif
+	source .bashrc
+	mamba activate base 
+#works, except bcl-convert. but thats fine.
+
 ```
 
 # Copykit image
