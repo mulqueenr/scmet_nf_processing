@@ -109,7 +109,7 @@ process GENERATE_GEM_WHITELIST {
 		tuple path("samplesheet_gemidx.csv"), path(flowcellDir)
 	script:
 	"""
-	seq_cycles=\$(sed 's/U/I/'))
+	seq_cycles=\$(sed 's/U/I/')
     #make gem specific samplesheet
     python /src/splitcells_whitelist_generator.py \\
     --i7_idx ${params.i7_idx} \\
