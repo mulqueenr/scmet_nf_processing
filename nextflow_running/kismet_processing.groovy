@@ -311,7 +311,7 @@ process AMETHYST_PROCESSING {
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
-		(fq1,fq2) =
+		fq1,fq2 =
 		Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
