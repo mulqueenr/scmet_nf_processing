@@ -1,25 +1,41 @@
-//Nextflow pipeline for processing Navin lab standard ACT seq libraries//
+//Nextflow pipeline for processing Navin lab methylation libraries//
+
+//TO DO
+/*
+//amethyst container 
+//add bcl-convert
+//add bsbolt
+
+//add amethyst initiation (100kb windows, 50kb windows or supplied bed file)
+//add scalebio processing flag
+//add scalebio indexes for demultiplexing
+//copykit redo reference windows to account for bsconversion mappability
+*/
+
 
 // Declare syntax version
-//https://github.com/danrlu/Nextflow_cheatsheet/blob/main/nextflow_cheatsheet.pdf
-//Runs entirely in conda environment singlecell_hic_pipeline_env
 nextflow.enable.dsl=2
 
 // Script parameters
-params.flowcellDir = "/volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome"
-params.outname = "250130_10xMET_231_nftest"
-params.outdir = "/volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf"
+params.flowcellDir = "/volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome" //Sequencing run flowcell dir
 params.src = "/volumes/USR2/Ryan/projects/10x_MET/scmet_nf_processing/src"
+params.ref_index="/volumes/USR2/Ryan/projects/10x_MET/ref/hg38_bsbolt"
+
+params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
+params.cellranger="/volumes/USR2/Ryan/tools/cellranger-atac-2.1.0/"
+
+//library parameters
 params.cell_try="5000" //Based on expected cell count from library generation
 params.i7_idx="ACTGGTAGAT" //i7 Index (See i7 Indexes in 10xmet_design tab)
-params.sequencing_cycles="Y151;I10;U16;Y151" //Treat index 2 as UMI just for counting sake
-params.cellranger="/volumes/USR2/Ryan/tools/cellranger-atac-2.1.0/"
-params.ref_index="/volumes/USR2/Ryan/projects/10x_MET/ref/hg38_bsbolt"
+
+//output
+params.outname = "250130_10xMET_231_nftest"
+params.outdir = "/volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf"
 
 log.info """
 
 		================================================
-		             KisMET Pipeline v1.0
+		             kismet Pipeline v1.0
 		================================================
 		Flowcell Dir : ${params.flowcellDir}
 		Sequencing Cycles: ${params.sequencing_cycles}
@@ -34,7 +50,6 @@ log.info """
 """.stripIndent()
 
 // BCL TO FASTQ PIPELINE FOR GENERATING SINGLE-CELL FASTQs
-
 process BCL_TO_FASTQ_INIT { 
 	//Generate Undetermined Fastq Files from BCL Files.
     //Count GEM indexes and generate a white list for splitting
@@ -85,7 +100,7 @@ process GENERATE_GEM_WHITELIST {
 	//NEED TO FIX WHITELIST LOCATION, EITHER COPY OR REQUIRE A POINTER TO WHERE CELLRANGER IS INSTALLED
 	cpus 50
 	label 'amethyst'
-	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.cellranger}:/cellranger/"
+	containerOptions "--bind ${params.src}:/src/,${params.cellranger}:/cellranger/"
   	publishDir "${params.outdir}/samplesheet", mode: 'copy', overwrite: true, pattern: "samplesheet_gemidx.csv"
 
 	input:
@@ -328,7 +343,6 @@ source activate #to use more recent version of java
 
 cd /volumes/USR2/Ryan/projects/10x_MET #move to project directory
 git clone https://github.com/mulqueenr/scmet_nf_processing #pull github repo
-
 
 nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 -resume \
