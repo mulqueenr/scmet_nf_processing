@@ -314,13 +314,11 @@ workflow {
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
 		| BCL_TO_FASTQ_ON_WHITELIST \
-		| flatten
+		| flatten //combine R1 and R2 to output
 		| collate(2) \
-		| view 
-
-/*
-
-		ADAPTER_TRIM(fqs) 
+		| map { a -> tuple(a0.simpleName, a0, a1) } \
+		| view
+/*		| ADAPTER_TRIM(fqs) 
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
 */
