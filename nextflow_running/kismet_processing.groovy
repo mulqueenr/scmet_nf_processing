@@ -316,7 +316,7 @@ workflow {
 		| BCL_TO_FASTQ_ON_WHITELIST \
 		| flatten //combine R1 and R2 to output
 		| collate(2) \
-		| map { a -> tuple(a0.simpleName, a0, a1) } \
+		| map { a -> tuple(a[0].simpleName, a[0], a[1]) } \
 		| view
 /*		| ADAPTER_TRIM(fqs) 
 		| ALIGN_BSBOLT \
