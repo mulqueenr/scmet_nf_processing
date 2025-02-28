@@ -317,12 +317,7 @@ workflow {
 		| GENERATE_GEM_WHITELIST \
 		| BCL_TO_FASTQ_ON_WHITELIST
 
-		fqs = 
-		fq1
-			.sort
-			.merge(fq2.sort)
-			.view()
-		
+		fqs = fq1.sort.merge(fq2.sort)		
 		//| ADAPTER_TRIM \
 		//| ALIGN_BSBOLT \
 		//| MARK_DUPLICATES
