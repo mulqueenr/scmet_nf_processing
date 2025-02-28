@@ -56,17 +56,17 @@ process BCL_TO_FASTQ_INIT {
 	//Assumes Y151;I10;U16;Y151 sequencing cycles unless specified as input parameter
 	//bcl-convert requires write access to "/var/logs/bcl-convert", so we just bind a dummy one
 	containerOptions "--bind ${params.outdir}/logs:/var/log/bcl-convert"
+	containerOptions '--env source /container_src/container_bashrc'
+	containerOptions '--env mamba activate base'
 	label 'amethyst'
 	cpus 50
+
 	input:
 		path flowcellDir
 	output:
 		tuple path("initial_gem_idx.txt"), path(flowcellDir)
     script:
 		"""
-		source /container_src/container_bashrc
-		mamba activate base
-
 		#Generate samplesheet
         echo '[Settings],' > SampleSheet.csv
         echo 'CreateFastqForIndexReads,1' >> SampleSheet.csv
@@ -364,9 +364,10 @@ nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 -with-report \
 --flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome \
 --outname 250130_10xMET_231_nftest \
---outdir $outdir
+--outdir /volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf
 #--resume
 
 */
 
+singularity exec --no-home --pid -B /volumes --bind /volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf/logs:/var/log/bcl-convert /volumes/USR2/Ryan/projects/10x_MET/src/amethyst.sif /bin/bash /volumes/USR2/Ryan/projects/10x_MET/work/26/0836b15530c568ac3c3205c13edc80/.command.run nxf_trace
 
