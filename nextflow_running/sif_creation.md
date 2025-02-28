@@ -219,13 +219,6 @@ amethyst.def
 Bootstrap: localimage
 From: /home/ubuntu/amethyst_pre
 
-%environment
-echo """
-To activate 	
-source /container_src/container_bashrc
-mamba activate base
-"""
-
 %files
   gencode.v43.annotation.gtf.gz /container_ref/gencode.v43.annotation.gtf.gz
   /home/ubuntu/cellranger-arc-2.0.2/lib/python/atac/barcodes/737K-arc-v1.txt.gz /container_ref/737K-arc-v1.txt.gz
@@ -239,7 +232,7 @@ mamba activate base
 		-bcl-convert
 		-samtools
 		-cutadapt
-	To activate enter the following two lines. 	
+	To activate enter the following two lines: 	
 	source /container_src/container_bashrc
 	mamba activate base
 %labels

@@ -55,7 +55,7 @@ process BCL_TO_FASTQ_INIT {
     //Count GEM indexes and generate a white list for splitting
 	//Assumes Y151;I10;U16;Y151 sequencing cycles unless specified as input parameter
 	//bcl-convert requires write access to "/var/logs/bcl-convert", so we just bind a dummy one
-	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.outdir}/logs:/var/log/bcl-convert"
+	containerOptions "--bind ${params.outdir}/logs:/var/log/bcl-convert"
 	label 'amethyst'
 	cpus 50
 	input:
@@ -66,8 +66,8 @@ process BCL_TO_FASTQ_INIT {
 		"""
 		source /container_src/container_bashrc
 		mamba activate base
-		#Generate samplesheet
 
+		#Generate samplesheet
         echo '[Settings],' > SampleSheet.csv
         echo 'CreateFastqForIndexReads,1' >> SampleSheet.csv
         echo 'OverrideCycles,${params.sequencing_cycles}' >> SampleSheet.csv
@@ -355,17 +355,17 @@ source activate #to use more recent version of java
 #first need to make the output dir and the log directory for bcl-convert
 outdir="/volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf"
 mkdir -p ${outdir}
-mkdir -/ ${outdir}/logs
+mkdir -p ${outdir}/logs
 
 cd /volumes/USR2/Ryan/projects/10x_MET #move to project directory
 git clone https://github.com/mulqueenr/scmet_nf_processing #pull github repo
 
 nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
--resume \
 -with-report \
 --flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome \
 --outname 250130_10xMET_231_nftest \
 --outdir $outdir
+#--resume
 
 */
 
