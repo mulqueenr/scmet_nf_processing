@@ -317,9 +317,9 @@ workflow {
 		| BCL_TO_FASTQ_ON_WHITELIST
 
 	//Pair fq1 and fq2 output
-        fq1.map { tuple( it.simpleName, it ) }.set{fq1}
+        BCL_TO_FASTQ_ON_WHITELIST.fq1.map { tuple( it.simpleName, it ) }.set{fq1}
 		
-		fq2.map { tuple( it.simpleName, it ) }.set{fq2}
+		BCL_TO_FASTQ_ON_WHITELIST.fq2.map { tuple( it.simpleName, it ) }.set{fq2}
 
 		fqs = fq1.combine( fq2, by: 0 ).view()
 
