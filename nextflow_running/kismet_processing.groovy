@@ -147,8 +147,8 @@ process BCL_TO_FASTQ_ON_WHITELIST {
         --force
 
 		#rename files so simpleName works better
-		for file in *R1*fastq.gz; do mv \"\$file\" \"\${file/_R1/.R1}\"; done
-		for file in *R2*fastq.gz; do mv \"\$file\" \"\${file/_R2/.R2}\"; done
+		for file in *R1*fastq.gz; do mv \"\$file\" \"\${file/_R1_/.R1_}\"; done
+		for file in *R2*fastq.gz; do mv \"\$file\" \"\${file/_R2_/.R2_}\"; done
 
 		"""
 }
@@ -157,7 +157,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 process ADAPTER_TRIM {
 	//TRIM READS OF ADAPTERS AND KNOWN METHYLATED REGIONS (GAP FILLS)
 	publishDir "${params.outdir}/reports/adapter_trim", mode: 'copy', overwrite: true, pattern: "*.log"
-	containerOptions "--bind ${params.src}:/src/,${params.outdir},/volumes/USR2/Ryan/.local:/tools/"
+	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	//TODO This container should be updated to be in the SIF and not local run
 	label 'amethyst'
 
@@ -168,7 +168,7 @@ process ADAPTER_TRIM {
 		//path("*.trim_report.log"), emit: trim_log
 	script:
 		"""
-		/tools/bin/cutadapt \\
+		/volumes/USR2/Ryan/.local/bin/cutadapt \\
 		-j 1 \\
 		-a AGATCGGAAGAGCACAC -A CTGTCTCTTATACACAT \\
 		-U 10 -u 10 \\
