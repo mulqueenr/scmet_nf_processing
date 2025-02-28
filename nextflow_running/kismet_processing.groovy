@@ -109,7 +109,7 @@ process GENERATE_GEM_WHITELIST {
 		tuple path("samplesheet_gemidx.csv"), path(flowcellDir)
 	script:
 	"""
-	seq_cycles=\$(echo '${params.sequencing_cycles}' | sed 's/U/I/' )
+	seq_cycles=\$(echo '${params.sequencing_cycles}' | sed 's/U/I/' ) #convert U to I for final cell output
     #make gem specific samplesheet
     python /src/splitcells_whitelist_generator.py \\
     --i7_idx ${params.i7_idx} \\
@@ -130,7 +130,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 	input:
 		tuple path(gem_whitelist),path(flowcellDir)
 	output:
-		tuple path("*_R1_001.fastq.gz"),path("*_R2_001.fastq.gz")
+		tuple path("*_R{1,2}_001.fastq.gz"),path("*_R2_001.fastq.gz")
     script:
 		"""
         #Run final bcl convert to split fastq out per cell
@@ -159,7 +159,7 @@ process ADAPTER_TRIM {
 	input:
 		tuple path(read1),path(read2)
 	output:
-		tuple val("$sample_name"), path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
+		tuple val("$sample_name"), path("*.R{1,2}_001.trim.fastq.gz")
 		//path("*.trim_report.log"), emit: trim_log
 	script:
 		def sample_name = read1.baseName
