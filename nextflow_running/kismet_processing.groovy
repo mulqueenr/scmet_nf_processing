@@ -159,7 +159,8 @@ process ADAPTER_TRIM {
 	input:
 		tuple path(read1),path(read2)
 	output:
-		tuple val("$sample_name"), path("*.R{1,2}_001.trim.fastq.gz")
+		path("*.R1_001.trim.fastq.gz") into read1
+		path("*.R2_001.trim.fastq.gz") into read2
 		//path("*.trim_report.log"), emit: trim_log
 	script:
 		def sample_name = read1.baseName
@@ -313,7 +314,14 @@ workflow {
 		Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
-		| BCL_TO_FASTQ_ON_WHITELIST.view()
+		| BCL_TO_FASTQ_ON_WHITELIST
+
+		fqs = 
+		read1
+			.sort
+			.merge(read2.sort)
+			.view()
+		
 		//| ADAPTER_TRIM \
 		//| ALIGN_BSBOLT \
 		//| MARK_DUPLICATES
