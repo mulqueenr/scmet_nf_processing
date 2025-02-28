@@ -130,7 +130,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 	input:
 		tuple path(gem_whitelist),path(flowcellDir)
 	output:
-		tuple path("*_R{1,2}_001.fastq.gz"),path("*_R2_001.fastq.gz")
+		tuple path("*_R{1,2}_001.fastq.gz")
     script:
 		"""
         #Run final bcl convert to split fastq out per cell
