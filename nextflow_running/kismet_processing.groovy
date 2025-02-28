@@ -332,6 +332,7 @@ workflow {
 		| ADAPTER_TRIM \
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
+/*
 
 	//CNV CLONE CALLING
 		sc_bams \
@@ -340,7 +341,6 @@ workflow {
 	//METHYLATION PROCESSING
 		sc_bams \
 		| METHYLATION_CALL
-/*
 
 
 	//AMETHYST CLONE CALLING
