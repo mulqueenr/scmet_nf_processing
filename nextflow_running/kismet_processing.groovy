@@ -310,14 +310,13 @@ process AMETHYST_PROCESSING {
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
-		sc_bams = 
 		Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
-		| BCL_TO_FASTQ_ON_WHITELIST \
-		| ADAPTER_TRIM \
-		| ALIGN_BSBOLT \
-		| MARK_DUPLICATES
+		| BCL_TO_FASTQ_ON_WHITELIST.view()
+		//| ADAPTER_TRIM \
+		//| ALIGN_BSBOLT \
+		//| MARK_DUPLICATES
 
 /*
 
