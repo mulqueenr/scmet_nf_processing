@@ -325,8 +325,7 @@ workflow {
 		fqs = fq1
 		.combine( fq2, by: 0 )
 
-		fqs \
-		| ADAPTER_TRIM 
+		ADAPTER_TRIM(fqs) 
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
 
