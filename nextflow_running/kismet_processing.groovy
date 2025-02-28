@@ -157,20 +157,19 @@ process ADAPTER_TRIM {
 	label 'amethyst'
 
 	input:
-		tuple path(read1),path(read2)
+		tuple val(cellid),path(read1),path(read2)
 	output:
-		tuple path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
+		tuple val(cellid),path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
 		//path("*.trim_report.log"), emit: trim_log
 	script:
-		def sample_name = read1.baseName
 		"""
 		/tools/cutadapt \\
 		-j 1 \
 		-a AGATCGGAAGAGCACAC -A CTGTCTCTTATACACAT \
 		-U 10 -u 10 \\
-		-o ${sample_name}.R1_001.trim.fastq.gz \\
-		-p ${sample_name}.R2_001.trim.fastq.gz \\
-		$read1 $read2 >> ${sample_name}.trim_report.log 2>> ${sample_name}.trim_report.log
+		-o ${cellid}.R1_001.trim.fastq.gz \\
+		-p ${cellid}.R2_001.trim.fastq.gz \\
+		$read1 $read2 >> ${cellid}.trim_report.log 2>> ${cellid}.trim_report.log
 		"""
 }
 
@@ -182,9 +181,9 @@ process ALIGN_BSBOLT {
 	//TODO This container should be updated to be in the SIF and not local run
 
 	input:
-		tuple val(sample_name),path(read1),path(read2)
+		tuple val(cellid),path(read1),path(read2)
 	output:
-		tuple val("$sample_name"),path("*.bam")
+		tuple val(cellid),path("*.bam")
 		//path("*.bsbolt.log"), emit: bsbolt_log
 	script:
 		"""
@@ -193,8 +192,8 @@ process ALIGN_BSBOLT {
 		-F2 $read2 \\
 		-t 1 -OT 1 \\
 		-UN -j \\
-		-O ${sample_name} \\
-		-DB ${params.ref_index} >> ${sample_name}.bsbolt.log 2>> ${sample_name}.bsbolt.log
+		-O ${cellid} \\
+		-DB ${params.ref_index} >> ${cellid}.bsbolt.log 2>> ${cellid}.bsbolt.log
 		"""
 }
 
@@ -207,16 +206,16 @@ process MARK_DUPLICATES {
 	label 'amethyst'
 
 	input:
-		tuple val(sample_name),path(bam)
+		tuple val(cellid),path(bam)
 	output:
-		tuple val("$sample_name"),path("*bbrd.bam")
+		tuple val("$cellid"),path("*bbrd.bam")
 		//path("*markdup.log"), emit: markdup_log
 	script:
 		"""
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
 		samtools sort -m 10G | \\
-		samtools markdup --mode s -r -S -s -f ${sample_name}.markdup.log - ${sample_name}.bbrd.bam
+		samtools markdup --mode s -r -S -s -f ${cellid}.markdup.log - ${cellid}.bbrd.bam
 	"""
 }
 
@@ -230,9 +229,9 @@ process METHYLATION_CALL {
 	label 'amethyst'
 
 	input:
-		tuple val(sample_name), path(bam)
+		tuple val(cellid), path(bam)
 	output:
-		tuple val("$sample_name"),path("*sam")
+		tuple val("$cellid"),path("*sam")
 		//path("*.metcall.log"), emit: metcall_log
 
 	script:
@@ -240,13 +239,13 @@ process METHYLATION_CALL {
     samtools index $bam
     bsbolt CallMethylation \\
     -I $bam \\
-    -O $sample_name \\
+    -O $cellid \\
     -ignore-ov -verbose \\
     -min 1 -t 1 -CG \\
-    -DB ${params.ref_index} >> ${sample_name}.bsbolt.metcall.log 2>> ${sample_name}.bsbolt.metcall.log
+    -DB ${params.ref_index} >> ${cellid}.bsbolt.metcall.log 2>> ${cellid}.bsbolt.metcall.log
 
 	python /src/premethyst_cgmap_to_h5.py \\
-	--input ${sample_name}.CG.map.gz
+	--input ${cellid}.CG.map.gz
 
 	"""
 }
@@ -286,20 +285,19 @@ process AMETHYST_PROCESSING {
 	label 'amethyst'
     
 	input:
-		tuple val(sample_name), path(bam)
+		tuple val(cellid), path(bam)
 	output:
-		tuple val(${sample_name})
-		path("*.metcall.log"), emit: metcall_log
+		tuple val(${cellid})path("*.metcall.log"), emit: metcall_log
 
 	script:
 	"""
     samtools index $bam
     bsbolt CallMethylation \\
     -I $bam \\
-    -O $sample_name \\
+    -O $cellid \\
     -ignore-ov -verbose \\
     -min 1 -t 1 -CG \\
-    -DB ${params.ref_index} >> ${sample_name}.bsbolt.metcall.log 2>> ${sample_name}.bsbolt.metcall.log
+    -DB ${params.ref_index} >> ${cellid}.bsbolt.metcall.log 2>> ${cellid}.bsbolt.metcall.log
 
 	python /src/premethyst_cgmap_to_h5.py \\
 	--input ${sample_name}.CG.map.gz
@@ -317,11 +315,10 @@ workflow {
 		| flatten //combine R1 and R2 to output
 		| collate(2) \
 		| map { a -> tuple(a[0].simpleName, a[0], a[1]) } \
-		| view
-/*		| ADAPTER_TRIM(fqs) 
+		| ADAPTER_TRIM \
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
-*/
+
 
 /*
 
