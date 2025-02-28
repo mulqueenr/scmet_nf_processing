@@ -109,13 +109,14 @@ process GENERATE_GEM_WHITELIST {
 		tuple path("samplesheet_gemidx.csv"), path(flowcellDir)
 	script:
 	"""
+	seq_cycles=\$(sed 's/U/I/'))
     #make gem specific samplesheet
     python /src/splitcells_whitelist_generator.py \\
     --i7_idx ${params.i7_idx} \\
     --gem_idx $gem_idx \\
     --prefix ${params.outname} \\
     --gem_cutoff ${params.cell_try} \\
-	--sequencing_cycles "${params.sequencing_cycles}" \\
+	--sequencing_cycles "\${seq_cycles}" \\
 	--outdir .
 	"""
 }
@@ -132,15 +133,6 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 		tuple path("*_R1_001.fastq.gz"),path("*_R2_001.fastq.gz")
     script:
 		"""
-		#Generate samplesheet
-
-        echo \"\"\"[Settings],
-        CreateFastqForIndexReads,1
-        OverrideCycles,${params.sequencing_cycles}
-        [Data],
-        Sample_ID,index
-        ${params.outname},${params.i7_idx}\"\"\"> SampleSheet.csv
-
         #Run final bcl convert to split fastq out per cell
         task_cpus=\$(expr ${task.cpus} / 3)
         bcl-convert \\
