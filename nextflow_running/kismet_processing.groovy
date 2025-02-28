@@ -130,8 +130,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 	input:
 		tuple path(gem_whitelist),path(flowcellDir)
 	output:
-		path("*_R1_001.fastq.gz"), emit: fq1
-		path("*_R2_001.fastq.gz"), emit: fq2
+		path("*.fastq.gz")
     script:
 		"""
         #Run final bcl convert to split fastq out per cell
@@ -311,21 +310,19 @@ process AMETHYST_PROCESSING {
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
-		Channel.fromPath(params.flowcellDir) \
+		fq = Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
-		| BCL_TO_FASTQ_ON_WHITELIST
+		| BCL_TO_FASTQ_ON_WHITELIST \
+		| collate(2) \
+		| view 
 
-	//Pair fq1 and fq2 output
-        BCL_TO_FASTQ_ON_WHITELIST.fq1.map { tuple( it.simpleName, it ) }.set{fq1}
-		
-		BCL_TO_FASTQ_ON_WHITELIST.fq2.map { tuple( it.simpleName, it ) }.set{fq2}
-
-		fqs = fq1.combine( fq2, by: 0 ).view()
+/*
 
 		ADAPTER_TRIM(fqs) 
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
+*/
 
 /*
 
