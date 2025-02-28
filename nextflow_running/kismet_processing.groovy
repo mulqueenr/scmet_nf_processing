@@ -314,6 +314,7 @@ workflow {
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
 		| BCL_TO_FASTQ_ON_WHITELIST \
+		| flatten
 		| collate(2) \
 		| view 
 
