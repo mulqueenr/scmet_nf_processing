@@ -115,7 +115,7 @@ process GENERATE_GEM_WHITELIST {
     --gem_idx $gem_idx \\
     --prefix ${params.outname} \\
     --gem_cutoff ${params.cell_try} \\
-	--sequencing_cycles ${params.sequencing_cycles} \\
+	--sequencing_cycles "${params.sequencing_cycles}" \\
 	--outdir .
 	"""
 }
