@@ -322,8 +322,7 @@ workflow {
 		
 		fq2.map { tuple( it.simpleName, it ) }.set{fq2}
 
-		fqs = fq1
-		.combine( fq2, by: 0 )
+		fqs = fq1.combine( fq2, by: 0 ).view()
 
 		ADAPTER_TRIM(fqs) 
 		| ALIGN_BSBOLT \
