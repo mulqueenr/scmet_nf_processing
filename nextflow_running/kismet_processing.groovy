@@ -110,8 +110,8 @@ process GENERATE_GEM_WHITELIST {
 		tuple path("samplesheet_gemidx.csv"), path(flowcellDir)
 	script:
 	"""
-	source /container_src/container_bashrc
-	mamba activate base
+		source /container_src/container_bashrc
+		source activate base
 	seq_cycles=\$(echo '${params.sequencing_cycles}' | sed 's/U/I/' ) #convert U to I for final cell output
     #make gem specific samplesheet
     python /src/splitcells_whitelist_generator.py \\
@@ -137,7 +137,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
     script:
 		"""
 		source /container_src/container_bashrc
-		mamba activate base
+		source activate base
         #Run final bcl convert to split fastq out per cell
         task_cpus=\$(expr ${task.cpus} / 3)
         bcl-convert \\
@@ -174,7 +174,7 @@ process ADAPTER_TRIM {
 	script:
 		"""
 		source /container_src/container_bashrc
-		mamba activate base
+		source activate base
 
 		cutadapt \\
 		-j 1 \\
@@ -202,7 +202,7 @@ process ALIGN_BSBOLT {
 	script:
 		"""
 		source /container_src/container_bashrc
-		mamba activate base
+		source activate base
 		python3 -m bsbolt Align \\
 		-F1 $read1 \\
 		-F2 $read2 \\
@@ -229,7 +229,7 @@ process MARK_DUPLICATES {
 	script:
 	"""
 		source /container_src/container_bashrc
-		mamba activate base
+		source activate base
 
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
@@ -255,8 +255,8 @@ process METHYLATION_CALL {
 
 	script:
 	"""
-	source /container_src/container_bashrc
-	mamba activate base
+		source /container_src/container_bashrc
+		source activate base
 	samtools index $bam
     python3 -m bsbolt CallMethylation \\
     -I $bam \\
@@ -287,8 +287,6 @@ process CNV_CLONES {
 		path("*.scCNA.tsv")
 	script:
 		"""
-		source /container_src/container_bashrc
-		mamba activate base
 		Rscript /src/copykit_cnv_clones.nf.R \\
 		--input_dir . \\
 		--output_prefix ${params.outname} \\
@@ -314,8 +312,8 @@ process AMETHYST_PROCESSING {
 
 	script:
 	"""
-	source /container_src/container_bashrc
-	mamba activate base
+		source /container_src/container_bashrc
+		source activate base
 	"""
 }
 
