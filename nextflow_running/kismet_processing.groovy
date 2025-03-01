@@ -66,7 +66,7 @@ process BCL_TO_FASTQ_INIT {
     script:
 		"""
 		source /container_src/container_bashrc
-
+		source activate base 
 		#Generate samplesheet
         echo '[Settings],' > SampleSheet.csv
         echo 'CreateFastqForIndexReads,1' >> SampleSheet.csv
@@ -77,6 +77,7 @@ process BCL_TO_FASTQ_INIT {
 
         #Run initial bcl convert and count gem indexes to determine whitelist for splitting
         task_cpus=\$(expr ${task.cpus} / 3)
+
         bcl-convert \\
         --bcl-input-directory ${flowcellDir} \\
         --bcl-num-conversion-threads \$task_cpus \\
