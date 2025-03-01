@@ -57,7 +57,7 @@ process BCL_TO_FASTQ_INIT {
 	//bcl-convert requires write access to "/var/logs/bcl-convert", so we just bind a dummy one
 	containerOptions "--bind ${params.outdir}/logs:/var/log/bcl-convert"	
 	label 'amethyst'
-	cpus 50
+	cpus 100
 
 	input:
 		path flowcellDir
@@ -99,7 +99,7 @@ process GENERATE_GEM_WHITELIST {
 	//Take GEM count output from initial Bcl splitting, 
 	//generate a new sample sheet for per cell splitting with bcl-convert
 	//NEED TO FIX WHITELIST LOCATION, EITHER COPY OR REQUIRE A POINTER TO WHERE CELLRANGER IS INSTALLED
-	cpus 50
+	cpus 100
 	label 'amethyst'
 	containerOptions "--bind ${params.src}:/src/,${params.cellranger}:/cellranger/"
   	publishDir "${params.outdir}/samplesheet", mode: 'copy', overwrite: true, pattern: "samplesheet_gemidx.csv"
@@ -127,7 +127,7 @@ process GENERATE_GEM_WHITELIST {
 process BCL_TO_FASTQ_ON_WHITELIST { 
 	//Generate cell level Fastq Files from BCL Files and generated white list
 	//TODO This container should be updated to be in the SIF and not local run
-	cpus 50
+	cpus 100
 	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.outdir}/logs:/var/log/bcl-convert"
 	label 'amethyst'
 	input:
