@@ -76,7 +76,7 @@ sudo chmod 666 /var/run/docker.sock
 #sudo singularity build ubuntu.sif docker-archive://ubuntu.tar #convert tar to sif to act as local bootstrap
 
 #download cellranger
-curl -o cellranger-arc-2.0.2.tar.gz "https://cf.10xgenomics.com/releases/cell-arc/cellranger-arc-2.0.2.tar.gz?Expires=1740790536&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA&Signature=oZX8JrjWnv3brVMUvUZ3pZ3VIGNNdk34lt3FqxHd7cEg0VhVpRecXIs0GbBY~Mbr1SdM1cAw183HwCU-MzjIqgwBB-PdRBr02kmYnSzlHMJJO5wFZNM90lYCxA2EpGSIR1ll6dntzD6CsUqCI8ZrFK2CXWIBEozyAa6A2wU~CGK-Lk07mBMyvvFOKk0Rkrsa2Hs5GG7XJ0O-Lsbb8pAWSWAJD02IByJRKblMSqrCrE~Gh8aGrIFqCkKC7nd66VDs0iLSbPSRPVdQH4pFYkNmTrbjoxpStv8d6C5ce01OUNc0eizAMpB72Hv2v7aKjyTiesJM1yA3UUv48n5w3UAlAg__"
+#download bcl-convert
 
 ```
 
@@ -86,7 +86,6 @@ sudo singularity build --sandbox amethyst_pre/ docker://ubuntu:latest
 sudo singularity shell --writable amethyst_pre/
 
 
-# %post
 # update and install essential dependencies
 apt-get -y update
 apt-get update && apt-get install -y automake \
@@ -102,7 +101,6 @@ parallel \
 nano \
 libfontconfig1-dev \
 libtiff-dev \
-zcat \
 screen \
 libncurses-dev
 
@@ -124,6 +122,7 @@ eval "$(mamba shell hook --shell bash)"
 mamba activate
 mamba shell init --shell bash --root-prefix=~/.local/share/mamba
 source ~/.bashrc
+export PATH="/opt/miniconda3/bin:$PATH"
 
 #mamba installs pip
 mamba install pip
@@ -137,17 +136,14 @@ mamba install -y -c conda-forge r r-devtools
 #install cutadapt
 apt install -y cutadapt
 
-#install bsbolt
-pip install -y bsbolt
-
 #install bcl-convert #might need to move or install to different directory for portability?
 #download from website https://dashboard.my.illumina.com/softwaredownload
-mkdir -p /usr/bin/bcl-convert
-mv bcl-convert-4.3.6-2.el7.x86_64.rpm /usr/bin/bcl-convert
+mkdir -p /usr/local/bin/bcl-convert
+mv bcl-convert-4.3.13-2.el7.x86_64.rpm /usr/local/bin/bcl-convert
 cd /usr/local/bin/bcl-convert
 apt-get install -y alien dpkg-dev debhelper build-essential
-alien bcl-convert-4.3.6-2.el7.x86_64.rpm
-dpkg --instdir /usr/bin/bcl-convert -i bcl-convert_4.3.6-3_amd64.deb
+alien bcl-convert-4.3.13-2.el7.x86_64.rpm
+dpkg --instdir /usr/local/bin/bcl-convert -i bcl-convert_4.3.13-3_amd64.deb
 
 #install R packages
 R --slave -e 'install.packages("Seurat",repos="http://cran.us.r-project.org")'
@@ -164,7 +160,7 @@ R --slave -e 'install.packages("pheatmap",repos="http://cran.us.r-project.org")'
 R --slave -e 'install.packages("plyr",repos="http://cran.us.r-project.org")'
 
 #install chromvar for motif enrichment in DMRs
-conda install -y conda-forge::gsl
+mamba install -y conda-forge::gsl
 R --slave -e 'BiocManager::install(c("DirichletMultinomial"))'
 R --slave -e 'BiocManager::install(c("GO.db","motifmatchr","JASPAR2020","rGREAT"))'
 R --slave -e 'devtools::install_github("GreenleafLab/chromVARmotifs")'
@@ -191,8 +187,13 @@ pip install methscan
 pip install jupyterlab
 pip install h5py numpy argparse pybedtools pandas scipy tables
 python -m ipykernel install --user --name=MethylTree
+mamba deactivate
 
 pip install biopython
+
+git clone https://github.com/NuttyLogic/BSBolt.git
+cd BSBolt
+pip3 install .
 
 #install samtools
 apt-get install 
@@ -207,8 +208,13 @@ make install
 
 ```bash
 sudo singularity shell --writable amethyst_pre/
-
+mkdir -p /container_src
+cp .bashrc /container_src/container_bashrc
+source /container_src/container_bashrc
+echo "export PATH='/opt/miniconda3/bin:$PATH'" >> /container_src/container_bashrc
+echo "source activate base" >> /container_src/container_bashrc
 sudo singularity build amethyst_pre.sif amethyst_pre/ 
+
 singularity shell amethyst_pre.sif
 
 ```
@@ -222,15 +228,15 @@ Stage: build
 
 %files
   gencode.v43.annotation.gtf.gz /container_ref/gencode.v43.annotation.gtf.gz
-  /home/ubuntu/cellranger-arc-2.0.2/lib/python/atac/barcodes/737K-arc-v1.txt.gz /container_ref/737K-arc-v1.txt.gz
+  737K-arc-v1.txt.gz /container_ref/737K-arc-v1.txt.gz
   MethylTree /opt/miniconda3/condabin/envs/MethylTree
-  /home/ubuntu/.bashrc /container_src/container_bashrc
+  BSBolt /container_src/bsbolt 
+  container_bashrc /container_src/container_bashrc
 
 %post
 	echo "export PATH='/opt/miniconda3/bin:$PATH'" >> $SINGULARITY_ENVIRONMENT
 	echo "source /container_src/container_bashrc" >> $SINGULARITY_ENVIRONMENT
 	echo "source activate base" >> $SINGULARITY_ENVIRONMENT
-
 
 %help
     This container has all R libraries for amethyst processing
@@ -239,9 +245,13 @@ Stage: build
 		-bcl-convert
 		-samtools
 		-cutadapt
+		-bsbolt
 	Run these two lines to activate interactive use:
 	source /container_src/container_bashrc
 	source activate base
+	
+	For bsbolt run
+	PYTHONPATH=/container_src/bsbolt python -m bsbolt
 
 %labels
     Author Ryan Mulqueen
@@ -256,7 +266,7 @@ Stage: build
 ```bash
 sudo singularity build amethyst.sif amethyst.def
 singularity shell amethyst.sif
-	source .bashrc
+	source /container_src/container_bashrc
 	mamba activate base 
 #works, except bcl-convert. but thats fine.
 
