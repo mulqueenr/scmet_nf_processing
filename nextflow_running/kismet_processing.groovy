@@ -66,7 +66,7 @@ process BCL_TO_FASTQ_INIT {
     script:
 		"""
 		source /container_src/container_bashrc
-		mamba activate base
+		source activate base
 		#Generate samplesheet
         echo '[Settings],' > SampleSheet.csv
         echo 'CreateFastqForIndexReads,1' >> SampleSheet.csv
