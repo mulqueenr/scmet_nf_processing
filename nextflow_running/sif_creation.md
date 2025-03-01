@@ -218,12 +218,19 @@ amethyst.def
 ```bash
 Bootstrap: localimage
 From: /home/ubuntu/amethyst_pre
+Stage: build
 
 %files
   gencode.v43.annotation.gtf.gz /container_ref/gencode.v43.annotation.gtf.gz
   /home/ubuntu/cellranger-arc-2.0.2/lib/python/atac/barcodes/737K-arc-v1.txt.gz /container_ref/737K-arc-v1.txt.gz
   MethylTree /opt/miniconda3/condabin/envs/MethylTree
   /home/ubuntu/.bashrc /container_src/container_bashrc
+
+%post
+	echo "export PATH='/opt/miniconda3/bin:$PATH'" >> $SINGULARITY_ENVIRONMENT
+	echo "source /container_src/container_bashrc" >> $SINGULARITY_ENVIRONMENT
+	echo "source activate base" >> $SINGULARITY_ENVIRONMENT
+
 
 %help
     This container has all R libraries for amethyst processing
@@ -232,15 +239,19 @@ From: /home/ubuntu/amethyst_pre
 		-bcl-convert
 		-samtools
 		-cutadapt
-	To activate enter the following two lines: 	
+	Run these two lines to activate interactive use:
 	source /container_src/container_bashrc
-	mamba activate base
+	source activate base
+
 %labels
     Author Ryan Mulqueen
     Version v0.4
     MyLabel Amethyst Container for kismet processing v1.2
 ```
 
+
+
+.
 ## Tester!!
 ```bash
 sudo singularity build amethyst.sif amethyst.def

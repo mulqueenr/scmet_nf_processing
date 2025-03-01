@@ -55,7 +55,7 @@ process BCL_TO_FASTQ_INIT {
     //Count GEM indexes and generate a white list for splitting
 	//Assumes Y151;I10;U16;Y151 sequencing cycles unless specified as input parameter
 	//bcl-convert requires write access to "/var/logs/bcl-convert", so we just bind a dummy one
-	containerOptions "--bind ${params.outdir}/logs:/var/log/bcl-convert --env echo '. /container_src/container_bashrc'"	
+	containerOptions "--bind ${params.outdir}/logs:/var/log/bcl-convert"	
 	label 'amethyst'
 	cpus 50
 
@@ -65,6 +65,7 @@ process BCL_TO_FASTQ_INIT {
 		tuple path("initial_gem_idx.txt"), path(flowcellDir)
     script:
 		"""
+		source /container_src/container_bashrc
 		mamba activate base
 		#Generate samplesheet
         echo '[Settings],' > SampleSheet.csv
