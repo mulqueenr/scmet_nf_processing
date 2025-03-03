@@ -191,6 +191,7 @@ process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
 	//publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	label 'amethyst'
+	containerOptions "--bind ${params.ref_index}:/ref/"
 	//TODO This container should be updated to be in the SIF and not local run
 
 	input:
@@ -208,7 +209,7 @@ process ALIGN_BSBOLT {
 		-t 1 -OT 1 \\
 		-UN -j \\
 		-O ${cellid} \\
-		-DB ${params.ref_index} >> ${cellid}.bsbolt.log 2>> ${cellid}.bsbolt.log
+		-DB /ref/ >> ${cellid}.bsbolt.log 2>> ${cellid}.bsbolt.log
 		"""
 }
 
@@ -217,7 +218,6 @@ process MARK_DUPLICATES {
 	//TODO This container should be updated to be in the SIF and not local run
 	//publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
-	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	label 'amethyst'
 
 	input:
@@ -242,7 +242,7 @@ process METHYLATION_CALL {
 	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
 
-	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
+	containerOptions "--bind ${params.ref_index}:/ref/"
 	label 'amethyst'
 
 	input:
@@ -261,7 +261,7 @@ process METHYLATION_CALL {
     -O $cellid \\
     -ignore-ov -verbose \\
     -min 1 -t 1 -CG \\
-    -DB ${params.ref_index} >> ${cellid}.bsbolt.metcall.log 2>> ${cellid}.bsbolt.metcall.log
+    -DB /ref/ >> ${cellid}.bsbolt.metcall.log 2>> ${cellid}.bsbolt.metcall.log
 
 	python /src/premethyst_cgmap_to_h5.py \\
 	--input ${cellid}.CG.map.gz
@@ -360,7 +360,7 @@ nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 --flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome \
 --outname 250130_10xMET_231_nftest \
 --outdir /volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf
-#--resume
+--resume
 
 */
 
