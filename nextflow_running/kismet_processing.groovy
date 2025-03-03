@@ -53,9 +53,9 @@ process BCL_TO_FASTQ_INIT {
     //Count GEM indexes and generate a white list for splitting
 	//Assumes Y151;I10;U16;Y151 sequencing cycles unless specified as input parameter
 	//bcl-convert requires write access to "/var/logs/bcl-convert", so we just bind a dummy one
+	cpus ${params.max_cpus}
 	containerOptions "--bind ${params.outdir}/logs:/var/log/bcl-convert"	
 	label 'amethyst'
-	cpus ${max_cpus}
 
 	input:
 		path flowcellDir
@@ -98,7 +98,7 @@ process GENERATE_GEM_WHITELIST {
 	//Take GEM count output from initial Bcl splitting, 
 	//generate a new sample sheet for per cell splitting with bcl-convert
 	//NEED TO FIX WHITELIST LOCATION, EITHER COPY OR REQUIRE A POINTER TO WHERE CELLRANGER IS INSTALLED
-	cpus ${max_cpus}
+	cpus ${params.max_cpus}
 	label 'amethyst'
 	containerOptions "--bind ${params.src}:/src/,${params.cellranger}:/cellranger/"
   	publishDir "${params.outdir}/samplesheet", mode: 'copy', overwrite: true, pattern: "samplesheet_gemidx.csv"
@@ -126,7 +126,7 @@ process GENERATE_GEM_WHITELIST {
 process BCL_TO_FASTQ_ON_WHITELIST { 
 	//Generate cell level Fastq Files from BCL Files and generated white list
 	//TODO This container should be updated to be in the SIF and not local run
-	cpus ${max_cpus}
+	cpus ${params.max_cpus}
 	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.outdir}/logs:/var/log/bcl-convert"
 	label 'amethyst'
 	input:
@@ -160,11 +160,10 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 // TRIM, ALIGN, and DEDUPLICATE READS
 process ADAPTER_TRIM {
 	//TRIM READS OF ADAPTERS AND KNOWN METHYLATED REGIONS (GAP FILLS)
+	cpus ${params.max_cpus}
 	publishDir "${params.outdir}/reports/adapter_trim", mode: 'copy', overwrite: true, pattern: "*.log"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
-	//TODO This container should be updated to be in the SIF and not local run
 	label 'amethyst'
-	cpus ${max_cpus}
 
 	input:
 		tuple val(cellid),path(read1),path(read2)
@@ -189,9 +188,9 @@ process ADAPTER_TRIM {
 process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
 	//publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
+	cpus ${params.max_cpus}
 	label 'amethyst'
 	containerOptions "--bind ${params.ref_index}:/ref/"
-	cpus ${max_cpus}
 
 	input:
 		tuple val(cellid),path(read1),path(read2)
@@ -215,9 +214,9 @@ process ALIGN_BSBOLT {
 process MARK_DUPLICATES {
 	//MARK DUPLICATE ALIGNMENTS
 	//publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
+	cpus ${params.max_cpus}
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
 	label 'amethyst'
-	cpus ${max_cpus}
 
 	input:
 		tuple val(cellid),path(bam)
@@ -239,8 +238,8 @@ process METHYLATION_CALL {
 	//CALL CG METHYLATION
 	//Split bam file by read names
 	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
+	cpus ${params.max_cpus}
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
-	cpus ${max_cpus}
 	containerOptions "--bind ${params.ref_index}:/ref/"
 	label 'amethyst'
 
@@ -272,11 +271,11 @@ process METHYLATION_CALL {
 process CNV_CLONES {
 	//COPYKIT FOR CLONE CALLING BY CNVS
 	//Run CopyKit and output list of bam files by clones
+	cpus ${params.max_cpus}
 	label 'cnv'
 	//publishDir "${params.outdir}/cnv_calling", mode: 'copy', pattern: "*{tsv,rds}"
 	//publishDir "${params.outdir}/plots/cnv", mode: 'copy', pattern: "*pdf"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
-	cpus 50
 
 	input:
 		path bams
