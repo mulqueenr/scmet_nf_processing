@@ -2,13 +2,7 @@
 
 //TO DO
 /*
-//amethyst container 
-//add bcl-convert
-//add bsbolt
-
 //add amethyst initiation (100kb windows, 50kb windows or supplied bed file)
-//add scalebio processing flag
-//add scalebio indexes for demultiplexing
 //copykit redo reference windows to account for bsconversion mappability
 */
 
@@ -23,7 +17,7 @@ params.ref_index="/volumes/USR2/Ryan/projects/10x_MET/ref/hg38_bsbolt"
 
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
 params.cellranger="/volumes/USR2/Ryan/tools/cellranger-atac-2.1.0/"
-
+params.max_cpus=100
 //library parameters
 params.cell_try="5000" //Based on expected cell count from library generation
 params.i7_idx="ACTGGTAGAT" //i7 Index (See i7 Indexes in 10xmet_design tab)
@@ -42,9 +36,12 @@ log.info """
 		Output Prefix : ${params.outname}
 		NF Working Dir : ${workflow.launchDir}
 		Output Directory : ${params.outdir}
+
 		i7 Index Library Split : ${params.i7_idx}
 		Cellranger ATAC install : ${params.cellranger}
-		Split out Cell ID for N= ${params.cell_try} cells.
+		Split out Cell ID for N = ${params.cell_try} cells.
+
+		Max cpus : ${params.max_cpus}
 		================================================
 
 """.stripIndent()
@@ -57,7 +54,7 @@ process BCL_TO_FASTQ_INIT {
 	//bcl-convert requires write access to "/var/logs/bcl-convert", so we just bind a dummy one
 	containerOptions "--bind ${params.outdir}/logs:/var/log/bcl-convert"	
 	label 'amethyst'
-	cpus 100
+	cpus ${max_cpus}
 
 	input:
 		path flowcellDir
@@ -100,7 +97,7 @@ process GENERATE_GEM_WHITELIST {
 	//Take GEM count output from initial Bcl splitting, 
 	//generate a new sample sheet for per cell splitting with bcl-convert
 	//NEED TO FIX WHITELIST LOCATION, EITHER COPY OR REQUIRE A POINTER TO WHERE CELLRANGER IS INSTALLED
-	cpus 100
+	cpus ${max_cpus}
 	label 'amethyst'
 	containerOptions "--bind ${params.src}:/src/,${params.cellranger}:/cellranger/"
   	publishDir "${params.outdir}/samplesheet", mode: 'copy', overwrite: true, pattern: "samplesheet_gemidx.csv"
@@ -128,7 +125,7 @@ process GENERATE_GEM_WHITELIST {
 process BCL_TO_FASTQ_ON_WHITELIST { 
 	//Generate cell level Fastq Files from BCL Files and generated white list
 	//TODO This container should be updated to be in the SIF and not local run
-	cpus 100
+	cpus ${max_cpus}
 	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.outdir}/logs:/var/log/bcl-convert"
 	label 'amethyst'
 	input:
@@ -166,6 +163,7 @@ process ADAPTER_TRIM {
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	//TODO This container should be updated to be in the SIF and not local run
 	label 'amethyst'
+	cpus ${max_cpus}
 
 	input:
 		tuple val(cellid),path(read1),path(read2)
@@ -192,7 +190,7 @@ process ALIGN_BSBOLT {
 	//publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	label 'amethyst'
 	containerOptions "--bind ${params.ref_index}:/ref/"
-	//TODO This container should be updated to be in the SIF and not local run
+	cpus ${max_cpus}
 
 	input:
 		tuple val(cellid),path(read1),path(read2)
@@ -215,10 +213,10 @@ process ALIGN_BSBOLT {
 
 process MARK_DUPLICATES {
 	//MARK DUPLICATE ALIGNMENTS
-	//TODO This container should be updated to be in the SIF and not local run
 	//publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
 	label 'amethyst'
+	cpus ${max_cpus}
 
 	input:
 		tuple val(cellid),path(bam)
@@ -241,7 +239,7 @@ process METHYLATION_CALL {
 	//Split bam file by read names
 	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
-
+	cpus ${max_cpus}
 	containerOptions "--bind ${params.ref_index}:/ref/"
 	label 'amethyst'
 
