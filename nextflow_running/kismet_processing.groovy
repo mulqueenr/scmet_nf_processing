@@ -17,7 +17,8 @@ params.ref_index="/volumes/USR2/Ryan/projects/10x_MET/ref/hg38_bsbolt"
 
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
 params.cellranger="/volumes/USR2/Ryan/tools/cellranger-atac-2.1.0/"
-params.max_cpus=100
+params.max_cpus=50
+
 //library parameters
 params.cell_try="5000" //Based on expected cell count from library generation
 params.i7_idx="ACTGGTAGAT" //i7 Index (See i7 Indexes in 10xmet_design tab)
