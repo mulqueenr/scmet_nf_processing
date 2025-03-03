@@ -107,6 +107,12 @@ libncurses-dev
 #fancy colors
 apt-get -o Dpkg::Progress-Fancy="1" install alpine-pico
 
+#install bcl-convert #might need to move or install to different directory for portability?
+#download from website https://dashboard.my.illumina.com/softwaredownload
+apt-get install -y alien dpkg-dev debhelper build-essential
+alien bcl-convert-4.3.13-2.el7.x86_64.rpm
+dpkg -i bcl-convert_4.3.13-3_amd64.deb
+
 # download, install, and update miniconda3
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh -b -f -p /opt/miniconda3/
@@ -135,15 +141,6 @@ mamba install -y -c conda-forge r r-devtools
 
 #install cutadapt
 apt install -y cutadapt
-
-#install bcl-convert #might need to move or install to different directory for portability?
-#download from website https://dashboard.my.illumina.com/softwaredownload
-mkdir -p /usr/local/bin/bcl-convert
-mv bcl-convert-4.3.13-2.el7.x86_64.rpm /usr/local/bin/bcl-convert
-cd /usr/local/bin/bcl-convert
-apt-get install -y alien dpkg-dev debhelper build-essential
-alien bcl-convert-4.3.13-2.el7.x86_64.rpm
-dpkg --instdir /usr/local/bin/bcl-convert -i bcl-convert_4.3.13-3_amd64.deb
 
 #install R packages
 R --slave -e 'install.packages("Seurat",repos="http://cran.us.r-project.org")'
@@ -211,11 +208,17 @@ sudo singularity shell --writable amethyst_pre/
 mkdir -p /container_src
 cp .bashrc /container_src/container_bashrc
 source /container_src/container_bashrc
-echo "export PATH='/opt/miniconda3/bin:$PATH'" >> /container_src/container_bashrc
-echo "source activate base" >> /container_src/container_bashrc
-sudo singularity build amethyst_pre.sif amethyst_pre/ 
+cp /container_src/container_bashrc container_bashrc 
 
+echo "export PATH='/opt/miniconda3/bin:$PATH'" >> container_bashrc
+echo "export PATH='/usr/local/bin/bcl-convert/:$PATH'" >> container_bashrc
+echo "source activate base" >> container_bashrc
+
+sudo singularity build amethyst_pre.sif amethyst_pre/ 
+mv /usr/local/bin/bcl-convert/usr/bin/bcl-convert /opt/miniconda3/bin/
 singularity shell amethyst_pre.sif
+source /container_src/container_bashrc
+
 
 ```
 

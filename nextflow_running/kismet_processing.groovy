@@ -66,7 +66,7 @@ process BCL_TO_FASTQ_INIT {
     script:
 		"""
 		source /container_src/container_bashrc
-		source activate base 
+		
 		#Generate samplesheet
         echo '[Settings],' > SampleSheet.csv
         echo 'CreateFastqForIndexReads,1' >> SampleSheet.csv
@@ -112,6 +112,7 @@ process GENERATE_GEM_WHITELIST {
 	script:
 	"""
 	source /container_src/container_bashrc
+
 	seq_cycles=\$(echo '${params.sequencing_cycles}' | sed 's/U/I/' ) #convert U to I for final cell output
     #make gem specific samplesheet
     python /src/splitcells_whitelist_generator.py \\
@@ -137,6 +138,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
     script:
 		"""
 		source /container_src/container_bashrc
+
         #Run final bcl convert to split fastq out per cell
         task_cpus=\$(expr ${task.cpus} / 3)
         bcl-convert \\
@@ -187,8 +189,7 @@ process ADAPTER_TRIM {
 
 process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
-	publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
-	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
+	//publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	label 'amethyst'
 	//TODO This container should be updated to be in the SIF and not local run
 
@@ -214,7 +215,7 @@ process ALIGN_BSBOLT {
 process MARK_DUPLICATES {
 	//MARK DUPLICATE ALIGNMENTS
 	//TODO This container should be updated to be in the SIF and not local run
-	publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
+	//publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	label 'amethyst'
@@ -238,7 +239,7 @@ process MARK_DUPLICATES {
 process METHYLATION_CALL {
 	//CALL CG METHYLATION
 	//Split bam file by read names
-	publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
+	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
 
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
@@ -253,6 +254,7 @@ process METHYLATION_CALL {
 	script:
 	"""
 	source /container_src/container_bashrc
+
 	samtools index $bam
 	PYTHONPATH=/container_src/bsbolt python -m bsbolt CallMethylation \\
     -I $bam \\
@@ -272,8 +274,8 @@ process CNV_CLONES {
 	//COPYKIT FOR CLONE CALLING BY CNVS
 	//Run CopyKit and output list of bam files by clones
 	label 'cnv'
-	publishDir "${params.outdir}/cnv_calling", mode: 'copy', pattern: "*{tsv,rds}"
-	publishDir "${params.outdir}/plots/cnv", mode: 'copy', pattern: "*pdf"
+	//publishDir "${params.outdir}/cnv_calling", mode: 'copy', pattern: "*{tsv,rds}"
+	//publishDir "${params.outdir}/plots/cnv", mode: 'copy', pattern: "*pdf"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	cpus 50
 
@@ -295,7 +297,7 @@ process AMETHYST_PROCESSING {
 	//INITIATE AMETHYST OBJECT
 	//SET H5 LOCATIONS TO OUTPUT DIRECTORY BECAUSE TEMPORARY WORK DIRECTORY IS NOT PERMANENT
 	//Split bam file by read names
-	publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
+	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
 
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
@@ -309,7 +311,6 @@ process AMETHYST_PROCESSING {
 	script:
 	"""
 		source /container_src/container_bashrc
-		source activate base
 	"""
 }
 
