@@ -189,6 +189,7 @@ process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
 	//publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	cpus "${params.max_cpus}"
+	memory '200 GB'
 	label 'amethyst'
 	containerOptions "--bind ${params.ref_index}:/ref/"
 
