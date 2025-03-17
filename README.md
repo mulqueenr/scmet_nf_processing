@@ -7,7 +7,7 @@ outdir="/home/rmulqueen/projects/kismet/data/250130_10xmet_231_nf"
 mkdir -p ${outdir}
 mkdir -p ${outdir}/logs
 
-cd /volumes/USR2/Ryan/projects/10x_MET #move to project directory
+cd /home/rmulqueen/projects/kismet/ #move to project directory
 git clone https://github.com/mulqueenr/scmet_nf_processing ./tools/scmet_nf_processing #pull github repo
 
 nextflow ./tools/scmet_nf_processing/nextflow_running/kismet_processing.groovy \
