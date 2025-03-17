@@ -1,22 +1,15 @@
-//Nextflow pipeline for processing Navin lab methylation libraries//
-
-//TO DO
-/*
-//add amethyst initiation (100kb windows, 50kb windows or supplied bed file)
-//copykit redo reference windows to account for bsconversion mappability
-*/
-
+//Nextflow pipeline for processing Navin lab spatial curio+multiome libraries//
 
 // Declare syntax version
 nextflow.enable.dsl=2
 
 // Script parameters
-params.flowcellDir = "/volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome" //Sequencing run flowcell dir
-params.src = "/volumes/USR2/Ryan/projects/10x_MET/scmet_nf_processing/src"
-params.ref_index="/volumes/USR2/Ryan/projects/10x_MET/ref/hg38_bsbolt"
+params.flowcellDir = "/home/rmulqueen/projects/kismet/seq/250127_RM10xMET_RYExome" //Sequencing run flowcell dir
+params.src = "/home/rmulqueen/projects/kismet/scmet_nf_processing/src"
+params.ref_index="/home/rmulqueen/ref/hg38_bsbolt" //TODO
 
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
-params.cellranger="/volumes/USR2/Ryan/tools/cellranger-atac-2.1.0/"
+params.cellranger="/home/rmulqueen/tools/cellranger-atac-2.1.0/cellranger-atac/bin/"
 params.max_cpus=50
 
 //library parameters
@@ -25,7 +18,7 @@ params.i7_idx="ACTGGTAGAT" //i7 Index (See i7 Indexes in 10xmet_design tab)
 
 //output
 params.outname = "250130_10xMET_231_nftest"
-params.outdir = "/volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf"
+params.outdir = "/home/rmulqueen/projects/kismet/data/250130_10xmet_231_nf"
 
 log.info """
 
@@ -341,23 +334,6 @@ workflow {
 }
 
 /*
-example run
-source activate #to use more recent version of java
-
-#first need to make the output dir and the log directory for bcl-convert
-outdir="/volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf"
-mkdir -p ${outdir}
-mkdir -p ${outdir}/logs
-
-cd /volumes/USR2/Ryan/projects/10x_MET #move to project directory
-git clone https://github.com/mulqueenr/scmet_nf_processing #pull github repo
-
-nextflow ./scmet_nf_processing/nextflow_running/kismet_processing.groovy \
--with-report \
---flowcellDir /volumes/seq/flowcells/MDA/nextseq2000/2024/250127_RM10xMET_RYExome \
---outname 250130_10xMET_231_nftest \
---outdir /volumes/USR2/Ryan/projects/10x_MET/experiments/250130_10xmet_231_nf
---resume
-
+Example run in readme
 */
 
