@@ -9,7 +9,7 @@ params.src = "/home/rmulqueen/projects/kismet/scmet_nf_processing/src"
 params.ref_index="/home/rmulqueen/ref/hg38_bsbolt" //TODO
 
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
-params.cellranger="/home/rmulqueen/tools/cellranger-atac-2.1.0/cellranger-atac/bin/"
+params.cellranger="/home/rmulqueen/tools/cellranger-atac-2.1.0/cellranger-atac"
 params.max_cpus=50
 
 //library parameters
