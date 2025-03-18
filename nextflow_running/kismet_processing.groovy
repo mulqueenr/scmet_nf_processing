@@ -258,6 +258,7 @@ process METHYLATION_CALL {
 
 	python /src/premethyst_cgmap_to_h5.py \\
 	--input ${cellid}.CG.map.gz
+	/Users/rmulqueen/Documents/GitHub/scmet_nf_processing/src/premethyst_cgmap_to_h5.py.py
 
 	"""
 }
