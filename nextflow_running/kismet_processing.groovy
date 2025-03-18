@@ -301,7 +301,8 @@ process AMETHYST_PROCESSING {
 	input:
 		tuple val(cellid), path(bam)
 	output:
-		tuple val(${cellid})path("*.metcall.log"), emit: metcall_log
+		tuple val(${cellid})
+		path("*.metcall.log"), emit: metcall_log
 
 	script:
 	"""
