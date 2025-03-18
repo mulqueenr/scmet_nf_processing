@@ -231,9 +231,9 @@ process MARK_DUPLICATES {
 process METHYLATION_CALL {
 	//CALL CG METHYLATION
 	//Split bam file by read names
-	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	cpus "${params.max_cpus}"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
+	publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	containerOptions "--bind ${params.ref_index}:/ref/,${params.src}:/src/"
 	label 'amethyst'
 
@@ -288,7 +288,7 @@ process CNV_CLONES {
 		"""
 }
 
-
+/*
 process AMETHYST_PROCESSING {
 	//INITIATE AMETHYST OBJECT
 	//SET H5 LOCATIONS TO OUTPUT DIRECTORY BECAUSE TEMPORARY WORK DIRECTORY IS NOT PERMANENT
@@ -309,7 +309,7 @@ process AMETHYST_PROCESSING {
 		source /container_src/container_bashrc
 	"""
 }
-
+*/
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
