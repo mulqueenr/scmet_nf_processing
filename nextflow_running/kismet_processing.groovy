@@ -324,11 +324,11 @@ workflow {
 		| ADAPTER_TRIM
 
 	//Alignment
-		| ADAPTER_TRIM.out.fqs \
+		ADAPTER_TRIM.out.fqs \
 		| ALIGN_BSBOLT
 
 	//Mark duplicates
-		| ALIGN_BSBOLT.out.bams \
+		ALIGN_BSBOLT.out.bams \
 		| MARK_DUPLICATES
 
 	//Call CG methylation
