@@ -234,13 +234,13 @@ process METHYLATION_CALL {
 	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	cpus "${params.max_cpus}"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
-	containerOptions "--bind ${params.ref_index}:/ref/"
+	containerOptions "--bind ${params.ref_index}:/ref/,${params.src}:/src/"
 	label 'amethyst'
 
 	input:
 		tuple val(cellid), path(bam)
 	output:
-		tuple path("*h5"), emit: cg_met
+		tuple path("*h5.gz"), emit: cg_met
 		path("*.metcall.log"), emit: metcall_log
 
 	script:
@@ -295,7 +295,6 @@ process AMETHYST_PROCESSING {
 	//Split bam file by read names
 	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
-
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	label 'amethyst'
     
