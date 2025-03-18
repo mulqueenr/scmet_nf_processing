@@ -309,7 +309,8 @@ process AMETHYST_PROCESSING {
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
-		sc_bams = Channel.fromPath(params.flowcellDir) \
+		sc_bams = 
+		Channel.fromPath(params.flowcellDir) \
 		| BCL_TO_FASTQ_INIT \
 		| GENERATE_GEM_WHITELIST \
 		| BCL_TO_FASTQ_ON_WHITELIST \
@@ -323,12 +324,12 @@ workflow {
 	//METHYLATION PROCESSING
 		sc_bams \
 		| METHYLATION_CALL
+/*
 
 	//CNV CLONE CALLING
 		sc_bams \
 		| collect \
 		| CNV_CLONES
-/*
 	//AMETHYST CLONE CALLING
 	//METHYLTREE CLONE CALLING
 */
