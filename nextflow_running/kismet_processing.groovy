@@ -332,11 +332,11 @@ workflow {
 		| MARK_DUPLICATES
 
 	//Call CG methylation
-		MARK_DUPLICATES.out.dedup.bams \
+		MARK_DUPLICATES.out.dedup_bams \
 		| METHYLATION_CALL
 
 	//CNV CLONE CALLING
-		MARK_DUPLICATES.out.dedup.bams \
+		MARK_DUPLICATES.out.dedup_bams \
 		| collect \
 		| CNV_CLONES
 
