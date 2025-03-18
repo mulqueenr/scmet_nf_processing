@@ -321,10 +321,11 @@ workflow {
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
 
+/*
+
 	//METHYLATION PROCESSING
 		sc_bams \
 		| METHYLATION_CALL
-/*
 
 	//CNV CLONE CALLING
 		sc_bams \
