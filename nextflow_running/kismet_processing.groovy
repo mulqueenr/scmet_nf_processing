@@ -240,8 +240,8 @@ process METHYLATION_CALL {
 	input:
 		tuple val(cellid), path(bam)
 	output:
-		tuple path("*h5")
-		//path("*.metcall.log"), emit: metcall_log
+		tuple path("*h5"), emit: cg_met
+		path("*.metcall.log"), emit: metcall_log
 
 	script:
 	"""
@@ -273,7 +273,7 @@ process CNV_CLONES {
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 
 	input:
-		path bams
+		tuple val(cellid),path(bam)
 	output:
 		path("*.scCNA.tsv"), emit: clone_tsv
 		path("*.scCNA.rds"), emit: clone_rds
