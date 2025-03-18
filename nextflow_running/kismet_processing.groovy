@@ -5,11 +5,11 @@ nextflow.enable.dsl=2
 
 // Script parameters
 params.flowcellDir = "/home/rmulqueen/projects/kismet/seq/250127_RM10xMET_RYExome" //Sequencing run flowcell dir
-params.src = "/home/rmulqueen/projects/kismet/scmet_nf_processing/src"
-params.ref_index="/home/rmulqueen/ref/hg38_bsbolt" //TODO
+params.src = "/home/rmulqueen/projects/kismet/tools/scmet_nf_processing/src"
+params.ref_index="/home/rmulqueen/ref/hg38_bsbolt" 
 
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
-params.cellranger="/home/rmulqueen/tools/cellranger-atac-2.1.0/cellranger-atac"
+params.cellranger="/home/rmulqueen/tools/cellranger-atac-2.1.0"
 params.max_cpus=50
 
 //library parameters
