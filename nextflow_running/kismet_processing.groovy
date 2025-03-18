@@ -319,15 +319,16 @@ workflow {
 		| ADAPTER_TRIM \
 		| ALIGN_BSBOLT \
 		| MARK_DUPLICATES
-/*
+
 	//METHYLATION PROCESSING
 		sc_bams \
 		| METHYLATION_CALL
 
 	//CNV CLONE CALLING
 		sc_bams \
+		| collect \
 		| CNV_CLONES
-
+/*
 	//AMETHYST CLONE CALLING
 	//METHYLTREE CLONE CALLING
 */
