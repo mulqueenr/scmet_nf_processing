@@ -161,8 +161,8 @@ process ADAPTER_TRIM {
 	input:
 		tuple val(cellid),path(read1),path(read2)
 	output:
-		tuple val(cellid),path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz")
-		//path("*.trim_report.log"), emit: trim_log
+		tuple val(cellid),path("*.R1_001.trim.fastq.gz"), path("*.R2_001.trim.fastq.gz"), emit: fqs
+		path("*.trim_report.log"), emit: trim_log
 	script:
 		"""
 		source /container_src/container_bashrc
@@ -180,8 +180,8 @@ process ADAPTER_TRIM {
 
 process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
-	//publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	cpus "${params.max_cpus}"
+	publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	memory '200 GB'
 	label 'amethyst'
 	containerOptions "--bind ${params.ref_index}:/ref/"
@@ -189,8 +189,8 @@ process ALIGN_BSBOLT {
 	input:
 		tuple val(cellid),path(read1),path(read2)
 	output:
-		tuple val(cellid),path("*.bam")
-		//path("*.bsbolt.log"), emit: bsbolt_log
+		tuple val(cellid),path("*.bam"), emit: bams
+		path("*.bsbolt.log"), emit: bsbolt_log
 	script:
 		"""
 		source /container_src/container_bashrc
@@ -207,16 +207,16 @@ process ALIGN_BSBOLT {
 
 process MARK_DUPLICATES {
 	//MARK DUPLICATE ALIGNMENTS
-	//publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	cpus "${params.max_cpus}"
+	publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
 	label 'amethyst'
 
 	input:
 		tuple val(cellid),path(bam)
 	output:
-		path("*bbrd.bam")
-		//path("*markdup.log"), emit: markdup_log
+		tuple val(cellid),path("*bbrd.bam"), emit: dedup_bams
+		path("*markdup.log"), emit: markdup_log
 	script:
 	"""
 		source /container_src/container_bashrc
@@ -248,6 +248,7 @@ process METHYLATION_CALL {
 	source /container_src/container_bashrc
 
 	samtools index $bam
+	
 	PYTHONPATH=/container_src/bsbolt python -m bsbolt CallMethylation \\
     -I $bam \\
     -O $cellid \\
@@ -267,14 +268,17 @@ process CNV_CLONES {
 	//Run CopyKit and output list of bam files by clones
 	cpus "${params.max_cpus}"
 	label 'cnv'
-	//publishDir "${params.outdir}/cnv_calling", mode: 'copy', pattern: "*{tsv,rds}"
-	//publishDir "${params.outdir}/plots/cnv", mode: 'copy', pattern: "*pdf"
+	publishDir "${params.outdir}/cnv_calling", mode: 'copy', pattern: "*{tsv,rds}"
+	publishDir "${params.outdir}/plots/cnv", mode: 'copy', pattern: "*pdf"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 
 	input:
 		path bams
 	output:
-		path("*.scCNA.tsv")
+		path("*.scCNA.tsv"), emit: clone_tsv
+		path("*.scCNA.rds"), emit: clone_rds
+		path("*.pdf"), emit: cnv_plots
+
 	script:
 		"""
 		Rscript /src/copykit_cnv_clones.nf.R \\
@@ -317,20 +321,26 @@ workflow {
 		| flatten //combine R1 and R2 to output
 		| collate(2) \
 		| map { a -> tuple(a[0].simpleName, a[0], a[1]) } \
-		| ADAPTER_TRIM \
-		| ALIGN_BSBOLT \
+		| ADAPTER_TRIM
+
+	//Alignment
+		| ADAPTER_TRIM.out.fqs \
+		| ALIGN_BSBOLT
+
+	//Mark duplicates
+		| ALIGN_BSBOLT.out.bams \
 		| MARK_DUPLICATES
 
-/*
-
-	//METHYLATION PROCESSING
-		sc_bams \
+	//Call CG methylation
+		MARK_DUPLICATES.out.dedup.bams \
 		| METHYLATION_CALL
 
 	//CNV CLONE CALLING
-		sc_bams \
+		MARK_DUPLICATES.out.dedup.bams \
 		| collect \
 		| CNV_CLONES
+
+/*
 	//AMETHYST CLONE CALLING
 	//METHYLTREE CLONE CALLING
 */
