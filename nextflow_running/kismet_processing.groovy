@@ -240,8 +240,9 @@ process METHYLATION_CALL {
 	input:
 		tuple val(cellid), path(bam)
 	output:
-		tuple val(cellid),path("*.metstats.csv"),path("*h5.gz"), emit: cg_met
+		tuple val(cellid),path("*h5.gz"), emit: cg_met
 		path("*.metcall.log"), emit: metcall_log
+		path("*.metstats.csv"), emit: metadata
 
 	script:
 	"""
@@ -287,6 +288,8 @@ process CNV_CLONES {
 
 	script:
 		"""
+		source /container_src/container_bashrc
+
 		Rscript /src/copykit_cnv_clones.nf.R \\
 		--input_dir . \\
 		--output_prefix ${params.outname} \\
@@ -294,33 +297,35 @@ process CNV_CLONES {
 		"""
 }
 
-/*
+
 process AMETHYST_PROCESSING {
 	//INITIATE AMETHYST OBJECT
 	//SET H5 LOCATIONS TO OUTPUT DIRECTORY BECAUSE TEMPORARY WORK DIRECTORY IS NOT PERMANENT!
 	//Split bam file by read names
-	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
+	publishDir "${params.outdir}/reports/", mode: 'copy', overwrite: true, pattern: "metadata.csv"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}/sc_metcalls"
 	label 'amethyst'
     
 	input:
-		tuple val(cellid), path(metstats), path(h5)
+		path(metstats)
 	output:
-		tuple val(${cellid})
+		path("metadata.csv"), emit: metadata
 		path("*.metcall.log"), emit: metcall_log
 
 	script:
 	"""
 		source /container_src/container_bashrc
 
+		cat *csv > metadata.csv
+
 		Rscript /src/amethyst_init.nf.R \\
 		--input-dir ${params.outdir}/sc_metcalls \\
 		--output_prefix ${params.outname} \\
-		--metadata metadata.csv
+		--metadata metadata.csv \\
 		--task_cpus ${task.cpus}
 	"""
 }
-*/
+
 
 workflow {
 	// BCL TO FASTQ PIPELINE FOR SPLITTING FASTQS
@@ -344,8 +349,12 @@ workflow {
 	//Call CG methylation
 		METHYLATION_CALL(MARK_DUPLICATES.out.dedup_bams)
 
+	//Amethyst Initiation
+		METHYLATION_CALL.out.metadata | collect | AMETHYST_PROCESSING
+
 	//CNV CLONE CALLING
 		MARK_DUPLICATES.out.dedup_bams | collect | CNV_CLONES
+	
 
 /*
 	//AMETHYST CLONE CALLING

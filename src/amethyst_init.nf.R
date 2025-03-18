@@ -18,6 +18,8 @@ option_list = list(
               help="List of single-cell bam files", metavar="character"),
   make_option(c("-p", "--output_prefix"), type="character", default="allcells", 
               help="Prefix of output"),
+  make_option(c("-m", "--metadata"), type="character", default="metadata.csv", 
+              help="Input of metadata from METHYLATION_CALL csv output."),
   make_option(c("-c", "--task_cpus"), type="integer", default=1, 
               help="Integer number of cpus")
 );
@@ -26,24 +28,24 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 cpu_count=opt$task_cpus
 prefix=opt$output_prefix
+metadata_in=opt$metadata
 
 obj <- createObject()
 
 #metadata MUST have a column called mcg_pct for score calculation
 #metadata MUST have a column called cov to regress coverage mias
-metadat$mcg_pct<-metadat$CG_mC_Pct #source these
-metadat$cov<-metadat$CG_Cov #source these
+metadat<-read.table(opt$metadata,sep=",")
+colnames(metadat)<-c("cellid","mcg_cov","cov","mcg_pct")
+row.names(metadat)<-metadat$cellid
 obj@metadata<-metadat
 
 head(obj@metadata)
-obj@metadata<-obj@metadata[obj@metadata$CG_Cov>10000,]
-plt<-ggplot(obj@metadata, aes(x=sampleName, y = CG_Cov)) +geom_violin() + geom_jitter()
+plt<-ggplot(obj@metadata, aes(x=prefix, y = cov)) +geom_violin() + geom_jitter()
 ggsave(file=paste0(prefix,"_cov_plot.pdf"),plt)
 
-h5paths<-list.files(path=".",pattern="*.h5.gz")
-cellid<-basename(h5paths)
-obj@h5paths <- data.frame(row.names = c(rownames(metadat)), paths = h5paths)
-
+h5paths<-list.files(path=input_dir,pattern="*.h5.gz",full.names=TRUE)
+cellid<-basename(h5paths) #make sure this matches with metadata
+obj@h5paths <- data.frame(row.names = c(cellid), paths = h5paths)
 
 # index files
 obj@index[["chr_cg"]] <- indexChr(obj, type = "CG", threads = cpu_count) 
@@ -83,7 +85,7 @@ cluster_by_windows<-function(obj,window_name,stepsize.=NULL,bed.=NULL,metric.="s
   return(obj)                                             
 }
 
-obj<-cluster_by_windows(obj,window_name="cg_100k_score",stepsize.=100000,threads.=200)
+obj<-cluster_by_windows(obj,window_name="cg_100k_score",stepsize.=100000,threads.=cpu_count)
 
 
 #Annotate Data
@@ -99,7 +101,7 @@ obj@genomeMatrices[["cg_promoter"]] <- makeWindows(obj,
                                                      promoter = TRUE, 
                                                      type = "CG", 
                                                      metric = "percent", 
-                                                     threads = 300, 
+                                                     threads = cpu_count, 
                                                      index = "chr_cg", 
                                                      nmin = 2) 
 
@@ -108,9 +110,9 @@ obj@genomeMatrices[["cg_genebody"]] <- makeWindows(obj,
                                                      promoter = FALSE, 
                                                      type = "CG", 
                                                      metric = "percent", 
-                                                     threads = 300, 
+                                                     threads = cpu_count, 
                                                      index = "chr_cg", 
                                                      nmin = 2) 
 
-saveRDS(obj,file="hbca_dcis.met.Rds")
+saveRDS(obj,file=paste0(prefix,".met.rds"))
 
