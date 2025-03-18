@@ -240,7 +240,7 @@ process METHYLATION_CALL {
 	input:
 		tuple val(cellid), path(bam)
 	output:
-		tuple val(cellid),path("*h5.gz"), emit: cg_met
+		tuple val(cellid),path("*.metstats.csv"),path("*h5.gz"), emit: cg_met
 		path("*.metcall.log"), emit: metcall_log
 
 	script:
@@ -259,6 +259,11 @@ process METHYLATION_CALL {
 	python /src/premethyst_cgmap_to_h5.py \\
 	--input ${cellid}.CGmap.gz
 
+	#summarize methylation stats for amethyst metadata
+	met_cg=\$(grep \"^Methylated CpG Cytosines:\" ${cellid}.bsbolt.metcall.log | awk -F: '{print \$2}' | tr -d ' ')
+	total_cg=\$(grep \"^Total Observed CpG Cytosines:\" ${cellid}.bsbolt.metcall.log | awk -F: '{print \$2}' | tr -d ' ')
+	perc_met=\$(grep \"^Methylated / Total Observed CpG Cytosines:\" ${cellid}.bsbolt.metcall.log | awk -F: '{print \$2}' | tr -d ' ')
+	echo "${cellid},\${met_cg},\${total_cg},\${perc_met}" > ${cellid}.metstats.csv
 	"""
 }
 
@@ -266,6 +271,7 @@ process METHYLATION_CALL {
 process CNV_CLONES {
 	//COPYKIT FOR CLONE CALLING BY CNVS
 	//Run CopyKit and output list of bam files by clones
+	//TODO need to add colorRamp2 R library to SIF
 	cpus "${params.max_cpus}"
 	label 'cnv'
 	publishDir "${params.outdir}/cnv_calling", mode: 'copy', pattern: "*{tsv,rds}"
@@ -291,15 +297,14 @@ process CNV_CLONES {
 /*
 process AMETHYST_PROCESSING {
 	//INITIATE AMETHYST OBJECT
-	//SET H5 LOCATIONS TO OUTPUT DIRECTORY BECAUSE TEMPORARY WORK DIRECTORY IS NOT PERMANENT
+	//SET H5 LOCATIONS TO OUTPUT DIRECTORY BECAUSE TEMPORARY WORK DIRECTORY IS NOT PERMANENT!
 	//Split bam file by read names
 	//publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
-	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
-	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
+	containerOptions "--bind ${params.src}:/src/,${params.outdir}/sc_metcalls"
 	label 'amethyst'
     
 	input:
-		tuple val(cellid), path(bam)
+		tuple val(cellid), path(metstats), path(h5)
 	output:
 		tuple val(${cellid})
 		path("*.metcall.log"), emit: metcall_log
@@ -307,6 +312,12 @@ process AMETHYST_PROCESSING {
 	script:
 	"""
 		source /container_src/container_bashrc
+
+		Rscript /src/amethyst_init.nf.R \\
+		--input-dir ${params.outdir}/sc_metcalls \\
+		--output_prefix ${params.outname} \\
+		--metadata metadata.csv
+		--task_cpus ${task.cpus}
 	"""
 }
 */
@@ -328,17 +339,13 @@ workflow {
 		| ALIGN_BSBOLT
 
 	//Mark duplicates
-		ALIGN_BSBOLT.out.bams \
-		| MARK_DUPLICATES
+		MARK_DUPLICATES(ALIGN_BSBOLT.out.bams)
 
 	//Call CG methylation
-		MARK_DUPLICATES.out.dedup_bams \
-		| METHYLATION_CALL
+		METHYLATION_CALL(MARK_DUPLICATES.out.dedup_bams)
 
 	//CNV CLONE CALLING
-		MARK_DUPLICATES.out.dedup_bams \
-		| collect \
-		| CNV_CLONES
+		MARK_DUPLICATES.out.dedup_bams | collect | CNV_CLONES
 
 /*
 	//AMETHYST CLONE CALLING

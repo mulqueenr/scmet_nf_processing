@@ -1,7 +1,7 @@
 library(copykit)
 library(BiocParallel)
 library(optparse)
-library(colorRamp2)
+#library(colorRamp2)
 BiocParallel::bpparam()
 
 option_list = list(
@@ -149,7 +149,7 @@ dat <- findAneuploidCells(dat)
 dat <- findOutliers(dat)
 
 pdf(paste0(prefix,".subclone.heatmap.outlier.pdf"))
-plotHeatmap(dat, row_split='outlier',n_threads=50,col=colorRamp2(c(-1,0,1),c("blue","white","red")))
+plotHeatmap(dat, row_split='outlier',n_threads=cpu_count) #col=colorRamp2(c(-1,0,1),c("blue","white","red"))
 dev.off()
 
 # kNN smooth profiles
@@ -175,14 +175,14 @@ dat <- runConsensusPhylo(dat)
 dat <- runPhylo(dat, metric = 'manhattan')
 dat <- calcInteger(dat,assay="segment_ratios",method="scquantum")
 
-col_fun = colorRamp2(c(-0.5, 0, 5), c("blue", "white", "red"))
+#col_fun = colorRamp2(c(-0.5, 0, 5), c("blue", "white", "red"))
 # Plot a copy number heatmap with clustering annotation
 pdf(paste0(prefix,".subclone.heatmap.segment_ratios.pdf"))
-plotHeatmap(dat, label = c('reads_assigned_bins','method','sample_name'),assay="segment_ratios",order='hclust',n_threads=50)
+plotHeatmap(dat, label = c('reads_assigned_bins','method','sample_name'),assay="segment_ratios",order='hclust',n_threads=cpu_count)
 dev.off()
 
 pdf(paste0(prefix,".subclone.heatmap.integer.pdf"))
-plotHeatmap(dat, label = c('reads_assigned_bins','method','sample_name'),assay="integer",order='hclust',n_threads=50)
+plotHeatmap(dat, label = c('reads_assigned_bins','method','sample_name'),assay="integer",order='hclust',n_threads=cpu_count)
 dev.off()
 
 pdf(paste0(prefix,".subclone.phylo.pdf"))
@@ -191,7 +191,7 @@ dev.off()
 
 dat <- calcInteger(dat, method = 'scquantum', assay = 'smoothed_bincounts')
 pdf(paste0(prefix,".subclone.heatmap.pdf"))
-plotHeatmap(dat, label = c('reads_total'),order='hclust',n_threads=50,col=col_fun)
+plotHeatmap(dat, label = c('reads_total'),order='hclust',n_threads=cpu_count) #,col=col_fun
 dev.off()
 
 saveRDS(dat,file=paste0(prefix,".scCNA.rds"))
