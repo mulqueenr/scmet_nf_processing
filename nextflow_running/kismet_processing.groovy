@@ -240,7 +240,7 @@ process METHYLATION_CALL {
 	input:
 		tuple val(cellid), path(bam)
 	output:
-		tuple path("*h5.gz"), emit: cg_met
+		tuple val(cellid),path("*h5.gz"), emit: cg_met
 		path("*.metcall.log"), emit: metcall_log
 
 	script:
