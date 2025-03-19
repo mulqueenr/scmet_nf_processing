@@ -288,8 +288,6 @@ process CNV_CLONES {
 
 	script:
 		"""
-		source /container_src/container_bashrc
-
 		Rscript /src/copykit_cnv_clones.nf.R \\
 		--input_dir . \\
 		--output_prefix ${params.outname} \\
