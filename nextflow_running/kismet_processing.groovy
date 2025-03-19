@@ -180,7 +180,7 @@ process ADAPTER_TRIM {
 
 process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
-	maxForks "${params.max_forks}"
+	maxForks 100
 	publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	label 'amethyst'
 	containerOptions "--bind ${params.ref_index}:/ref/"
@@ -206,7 +206,7 @@ process ALIGN_BSBOLT {
 
 process MARK_DUPLICATES {
 	//MARK DUPLICATE ALIGNMENTS
-	maxForks "${params.max_forks}"
+	maxForks 100
 	publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
 	label 'amethyst'
@@ -230,7 +230,7 @@ process MARK_DUPLICATES {
 process METHYLATION_CALL {
 	//CALL CG METHYLATION
 	//Split bam file by read names
-	maxForks "${params.max_forks}"
+	maxForks 100
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
 	publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	containerOptions "--bind ${params.ref_index}:/ref/,${params.src}:/src/"
