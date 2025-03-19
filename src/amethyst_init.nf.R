@@ -12,6 +12,7 @@ library(purrr)
 library(cowplot)
 library(pheatmap)
 library(plyr)
+library(optparse)
 
 option_list = list(
   make_option(c("-i", "--input_dir"), type="character", default=".", 
