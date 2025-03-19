@@ -153,7 +153,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 // TRIM, ALIGN, and DEDUPLICATE READS
 process ADAPTER_TRIM {
 	//TRIM READS OF ADAPTERS AND KNOWN METHYLATED REGIONS (GAP FILLS)
-	maxForks "${params.max_forks}"
+	maxForks 100
 	publishDir "${params.outdir}/reports/adapter_trim", mode: 'copy', overwrite: true, pattern: "*.log"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	label 'amethyst'
