@@ -351,7 +351,7 @@ workflow {
 		METHYLATION_CALL.out.metadata | collect | AMETHYST_PROCESSING
 
 	//CNV CLONE CALLING
-		MARK_DUPLICATES.out.dedup_bams | collect | CNV_CLONES
+		//MARK_DUPLICATES.out.dedup_bams | collect | CNV_CLONES
 	
 
 /*
