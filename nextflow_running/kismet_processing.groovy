@@ -11,7 +11,7 @@ params.ref_index="/home/rmulqueen/ref/hg38_bsbolt"
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
 params.cellranger="/home/rmulqueen/tools/cellranger-atac-2.1.0"
 params.max_cpus=50
-
+params.max_forks=100
 //library parameters
 params.cell_try="5000" //Based on expected cell count from library generation
 params.i7_idx="ACTGGTAGAT" //i7 Index (See i7 Indexes in 10xmet_design tab)
@@ -153,7 +153,7 @@ process BCL_TO_FASTQ_ON_WHITELIST {
 // TRIM, ALIGN, and DEDUPLICATE READS
 process ADAPTER_TRIM {
 	//TRIM READS OF ADAPTERS AND KNOWN METHYLATED REGIONS (GAP FILLS)
-	cpus "${params.max_cpus}"
+	maxForks "${params.max_forks}"
 	publishDir "${params.outdir}/reports/adapter_trim", mode: 'copy', overwrite: true, pattern: "*.log"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}"
 	label 'amethyst'
@@ -180,9 +180,8 @@ process ADAPTER_TRIM {
 
 process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
-	cpus "${params.max_cpus}"
+	maxForks "${params.max_forks}"
 	publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
-	memory '200 GB'
 	label 'amethyst'
 	containerOptions "--bind ${params.ref_index}:/ref/"
 
@@ -207,7 +206,7 @@ process ALIGN_BSBOLT {
 
 process MARK_DUPLICATES {
 	//MARK DUPLICATE ALIGNMENTS
-	cpus "${params.max_cpus}"
+	maxForks "${params.max_forks}"
 	publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
 	label 'amethyst'
@@ -231,7 +230,7 @@ process MARK_DUPLICATES {
 process METHYLATION_CALL {
 	//CALL CG METHYLATION
 	//Split bam file by read names
-	cpus "${params.max_cpus}"
+	maxForks "${params.max_forks}"
 	publishDir "${params.outdir}/sc_metcalls", mode: 'copy', overwrite: true, pattern: "*.h5.gz"
 	publishDir "${params.outdir}/reports/metcalls", mode: 'copy', overwrite: true, pattern: "*.log"
 	containerOptions "--bind ${params.ref_index}:/ref/,${params.src}:/src/"

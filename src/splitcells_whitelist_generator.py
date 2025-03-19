@@ -21,7 +21,7 @@ parser.add_argument('--gem_idx',default="gem_idx.txt")
 parser.add_argument('--prefix',default="10xmet")
 parser.add_argument('--gem_cutoff',default=5000)
 parser.add_argument('--outdir',default="./sc_bam")
-parser.add_argument('--sequencing_cycles',default="Y151;I10;U16;Y151")
+parser.add_argument('--sequencing_cycles',default="Y151;I10;I16;Y151")
 args = parser.parse_args()
 
 os.system("mkdir -p "+ args.outdir)  
