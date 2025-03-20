@@ -231,17 +231,17 @@ process MARK_DUPLICATES {
 	"""
 		source /container_src/container_bashrc
 
-		#output bam
+		#output bam, remove duplicates
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
 		samtools sort -m 10G | \\
-		samtools markdup --mode s -r -S -s -f ${cellid}.markdup.log - ${cellid}.bbrd.bam
+		samtools markdup --mode t -r -S -s -f ${cellid}.markdup.log - ${cellid}.bbrd.bam
 
-		#project complexity bam
+		#project complexity bam, just mark duplicates
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
 		samtools sort -m 10G | \\
-		samtools markdup --mode s -r -s - ${cellid}.mkdup.bam
+		samtools markdup --mode t -s - ${cellid}.mkdup.bam
 
 		java -jar /picard.jar \\
 		EstimateLibraryComplexity \\
