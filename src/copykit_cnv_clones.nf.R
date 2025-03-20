@@ -18,7 +18,7 @@ opt = parse_args(opt_parser);
 cpu_count=opt$task_cpus
 prefix=opt$output_prefix
 
-register(MulticoreParam(progressbar = T, workers = 50), default = T)
+register(MulticoreParam(progressbar = T, workers = cpu_count), default = T)
 
 genome <- "hg38"
 resolution <- "500kb"
@@ -30,6 +30,8 @@ reads_assigned_bins <- reads_duplicates <- reads_total <- NULL
 
 files <-list.files(opt$input_dir, pattern = "*.bbrd.bam", full.names = TRUE, ignore.case = TRUE )
 files_names <- basename(gsub(pattern = ".bbrd.bam", "", files))
+#files <-list.files(opt$input_dir, pattern = "*.rmdup.bam", full.names = TRUE, ignore.case = TRUE )
+#files_names <- basename(gsub(pattern = ".rmdup.bam", "", files))
 
 hg38_grangeslist <- hg38_grangeslist
 hg38_rg<-hg38_grangeslist[[paste0("hg38_",resolution)]]
@@ -178,11 +180,11 @@ dat <- calcInteger(dat,assay="segment_ratios",method="scquantum")
 #col_fun = colorRamp2(c(-0.5, 0, 5), c("blue", "white", "red"))
 # Plot a copy number heatmap with clustering annotation
 pdf(paste0(prefix,".subclone.heatmap.segment_ratios.pdf"))
-plotHeatmap(dat, label = c('reads_assigned_bins','method','sample_name'),assay="segment_ratios",order='hclust',n_threads=cpu_count)
+plotHeatmap(dat, label = c('reads_assigned_bins','sample_name'),assay="segment_ratios",order='hclust',n_threads=cpu_count)
 dev.off()
 
 pdf(paste0(prefix,".subclone.heatmap.integer.pdf"))
-plotHeatmap(dat, label = c('reads_assigned_bins','method','sample_name'),assay="integer",order='hclust',n_threads=cpu_count)
+plotHeatmap(dat, label = c('reads_assigned_bins','sample_name'),assay="integer",order='hclust',n_threads=cpu_count)
 dev.off()
 
 pdf(paste0(prefix,".subclone.phylo.pdf"))
