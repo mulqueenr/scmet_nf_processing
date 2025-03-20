@@ -39,6 +39,8 @@ ggsave(file=paste0(prefix,"_cov_plot.pdf"),plt)
 
 h5paths<-list.files(path=input_dir,pattern="*.h5.gz",full.names=TRUE)
 cellid<-basename(h5paths) #make sure this matches with metadata
+cellid<-gsub(pattern=".h5.gz",replacement="",basename(h5paths)) #make sure this matches with metadata
+
 obj@h5paths <- data.frame(row.names = c(cellid), paths = h5paths)
 
 # index files
