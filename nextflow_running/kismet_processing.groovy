@@ -224,7 +224,6 @@ process MARK_DUPLICATES {
 	output:
 		tuple val(cellid),path("*bbrd.bam"), emit: dedup_bams
 		path("*markdup.log"), emit: markdup_log
-		path("*.complex_metrics.txt"), emit: complexity_log
 		path("*.projected_metrics.txt"), emit: projected_log
 
 	script:
@@ -234,9 +233,24 @@ process MARK_DUPLICATES {
 		#output bam, remove duplicates
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
-		samtools sort -m 10G | \\
-		samtools markdup --mode t -r -S -s -f ${cellid}.markdup.log - ${cellid}.bbrd.bam
+		samtools sort -m 10G -O BAM -o ${cellid}.tmp.bam
 
+		#output of removal of duplicate reads
+		samtools markdup --mode t -r -S -s -f ${cellid}.markdup.log ${cellid}.tmp.bam ${cellid}.bbrd.bam
+
+		#generate library complexity based on 10% downsample rates
+		#count unique chr:start sites
+		for i in \$(seq 0.1 0.1 1.0); do
+		uniq_count=\$(samtools view -s \$i ${cellid}.tmp.bam \\
+		| awk 'OFS="\\t"{print \$3,\$4} \\
+		| sort \\
+		| uniq -c \\
+		| wc -l)
+		echo "${cellid},\${i},\${uniq_count};
+		done > ${cellid}.projected_metrics.txt
+	"""
+	/*
+	I don't trust picards estimate library complexity. its returnning the same percent duplicates despite different library sizes
 		#project complexity bam, just mark duplicates
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
@@ -253,7 +267,7 @@ process MARK_DUPLICATES {
 		#format a bit
 		grep "^Unknown" ${cellid}.complex_metrics.txt | \\
 		awk -v cellid=${cellid} 'OFS="," {print cellid,\$3,\$9,\$10}' > ${cellid}.projected_metrics.txt
-	"""
+	*/
 }
 
 process METHYLATION_CALL {
