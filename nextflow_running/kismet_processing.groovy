@@ -242,12 +242,12 @@ process MARK_DUPLICATES {
 		#count unique chr:start sites
 		for i in \$(seq 0.1 0.1 1.0); do
 		uniq_count=\$(samtools view -F 3332 -s \$i ${cellid}.tmp.bam \\
-		| awk 'OFS="\\t"{print \$3,\$4} \\
+		| awk 'OFS="\\t"{print \$3,\$4}' \\
 		| sort \\
 		| uniq -c \\
 		| wc -l)
-		echo "${cellid},\${i},\${uniq_count};
-		done > ${cellid}.projected_metrics.txt
+		total_count=\$(samtools view -F 3332 -s \$i ${cellid}.tmp.bam | wc -l)
+		echo "${cellid},\${i},\${total_count},\${uniq_count}"; done > ${cellid}.projected_metrics.txt
 		#excluding reads that meet any below conditions:
 		#read unmapped (0x4)
 		#not primary alignment (0x100)
