@@ -108,5 +108,5 @@ obj@genomeMatrices[["cg_genebody"]] <- makeWindows(obj,
                                                      index = "chr_cg", 
                                                      nmin = 2) 
 
-saveRDS(obj,file=paste0(prefix,".met.rds"))
+saveRDS(obj,file=paste0(prefix,".amethyst.rds"))
 
