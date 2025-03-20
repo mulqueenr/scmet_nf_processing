@@ -231,16 +231,23 @@ process MARK_DUPLICATES {
 	"""
 		source /container_src/container_bashrc
 
+		#output bam
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
 		samtools sort -m 10G | \\
 		samtools markdup --mode s -r -S -s -f ${cellid}.markdup.log - ${cellid}.bbrd.bam
 
+		#project complexity bam
+		samtools sort -m 10G -n $bam | \\
+		samtools fixmate -p -m - - | \\
+		samtools sort -m 10G | \\
+		samtools markdup --mode s -r -s - ${cellid}.mkdup.bam
+
 		java -jar /picard.jar \\
 		EstimateLibraryComplexity \\
 		MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \\
 		TMP_DIR="." \\
-		I=${cellid}.bbrd.bam \\
+		I=${cellid}.mkdup.bam \\
 		O=${cellid}.complex_metrics.txt
 
 		#format a bit
