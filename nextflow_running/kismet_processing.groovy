@@ -239,12 +239,12 @@ process MARK_DUPLICATES {
 		java -jar /picard.jar \\
 		EstimateLibraryComplexity \\
 		MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \\
-		I=${bam_simplename}.rmdup.bam \\
-		O=${bam_simplename}.complex_metrics.txt
+		I=${cellid}.rmdup.bam \\
+		O=${cellid}.complex_metrics.txt
 
 		#format a bit
-		grep "^Unknown" ${bam_simplename}.complex_metrics.txt | \\
-		awk -v cellid=${bam_simplename} 'OFS="," {print cellid,\$3,\$9,\$10}' > ${bam_simplename}.projected_metrics.txt
+		grep "^Unknown" ${cellid}.complex_metrics.txt | \\
+		awk -v cellid=${cellid} 'OFS="," {print cellid,\$3,\$9,\$10}' > ${cellid}.projected_metrics.txt
 	"""
 }
 
