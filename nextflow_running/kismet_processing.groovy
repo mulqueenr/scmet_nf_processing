@@ -10,8 +10,11 @@ params.ref_index="/home/rmulqueen/ref/hg38_bsbolt"
 
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
 params.cellranger="/home/rmulqueen/tools/cellranger-atac-2.1.0"
+params.picard="/home/rmulqueen/tools/picard.jar"
+
 params.max_cpus=50
 params.max_forks=100
+
 //library parameters
 params.cell_try="5000" //Based on expected cell count from library generation
 params.i7_idx="ACTGGTAGAT" //i7 Index (See i7 Indexes in 10xmet_design tab)
@@ -208,7 +211,12 @@ process MARK_DUPLICATES {
 	//MARK DUPLICATE ALIGNMENTS
 	maxForks 100
 	publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
+	publishDir "${params.outdir}/reports/complexity", mode: 'copy', overwrite: true, pattern: "*.complex_metrics.txt"
+	publishDir "${params.outdir}/reports/projected_size", mode: 'copy', overwrite: true, pattern: "*.projected_metrics.txt"
+
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
+	containerOptions "--bind ${params.picard}:/picard.jar"
+
 	label 'amethyst'
 
 	input:
@@ -216,6 +224,9 @@ process MARK_DUPLICATES {
 	output:
 		tuple val(cellid),path("*bbrd.bam"), emit: dedup_bams
 		path("*markdup.log"), emit: markdup_log
+		path("*.complex_metrics.txt"), emit: complexity_log
+		path("*.projected_metrics.txt"), emit: projected_log
+
 	script:
 	"""
 		source /container_src/container_bashrc
@@ -224,6 +235,16 @@ process MARK_DUPLICATES {
 		samtools fixmate -p -m - - | \\
 		samtools sort -m 10G | \\
 		samtools markdup --mode s -r -S -s -f ${cellid}.markdup.log - ${cellid}.bbrd.bam
+
+		java -jar /picard.jar \\
+		EstimateLibraryComplexity \\
+		MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \\
+		I=${bam_simplename}.rmdup.bam \\
+		O=${bam_simplename}.complex_metrics.txt
+
+		#format a bit
+		grep "^Unknown" ${bam_simplename}.complex_metrics.txt | \\
+		awk -v cellid=${bam_simplename} 'OFS="," {print cellid,\$3,\$9,\$10}' > ${bam_simplename}.projected_metrics.txt
 	"""
 }
 
