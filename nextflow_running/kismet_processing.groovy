@@ -240,7 +240,7 @@ process MARK_DUPLICATES {
 		EstimateLibraryComplexity \\
 		MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \\
 		TMP_DIR="." \\
-		I=${cellid}.rmdup.bam \\
+		I=${cellid}.bbrd.bam \\
 		O=${cellid}.complex_metrics.txt
 
 		#format a bit
