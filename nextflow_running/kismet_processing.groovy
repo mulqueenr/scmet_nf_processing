@@ -239,6 +239,7 @@ process MARK_DUPLICATES {
 		java -jar /picard.jar \\
 		EstimateLibraryComplexity \\
 		MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \\
+		TMP_DIR="." \\
 		I=${cellid}.rmdup.bam \\
 		O=${cellid}.complex_metrics.txt
 
