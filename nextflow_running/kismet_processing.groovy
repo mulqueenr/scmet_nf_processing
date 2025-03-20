@@ -241,13 +241,18 @@ process MARK_DUPLICATES {
 		#generate library complexity based on 10% downsample rates
 		#count unique chr:start sites
 		for i in \$(seq 0.1 0.1 1.0); do
-		uniq_count=\$(samtools view -s \$i ${cellid}.tmp.bam \\
+		uniq_count=\$(samtools view -F 3332 -s \$i ${cellid}.tmp.bam \\
 		| awk 'OFS="\\t"{print \$3,\$4} \\
 		| sort \\
 		| uniq -c \\
 		| wc -l)
 		echo "${cellid},\${i},\${uniq_count};
 		done > ${cellid}.projected_metrics.txt
+		#excluding reads that meet any below conditions:
+		#read unmapped (0x4)
+		#not primary alignment (0x100)
+		#read is PCR or optical duplicate (0x400)
+		#supplementary alignment (0x800)
 	"""
 	/*
 	I don't trust picards estimate library complexity. its returnning the same percent duplicates despite different library sizes
