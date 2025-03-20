@@ -12,30 +12,23 @@ library(purrr)
 library(cowplot)
 library(pheatmap)
 library(plyr)
-library(optparse)
 
-option_list = list(
-  make_option(c("-i", "--input_dir"), type="character", default=".", 
-              help="List of single-cell bam files", metavar="character"),
-  make_option(c("-p", "--output_prefix"), type="character", default="allcells", 
-              help="Prefix of output"),
-  make_option(c("-m", "--metadata"), type="character", default="metadata.csv", 
-              help="Input of metadata from METHYLATION_CALL csv output."),
-  make_option(c("-c", "--task_cpus"), type="integer", default=1, 
-              help="Integer number of cpus")
-);
+#forgot to add optparse to SIF, so just using ordered list of inputs
+args <- commandArgs(trailingOnly = TRUE)
+input_dir=args[1] #"Dir of single-cell bam files"
+output_prefix=args[2] #Prefix of output
+metadata=args[3] #"Input of metadata from METHYLATION_CALL csv output."
+task_cpus=args[4] #"Integer number of cpus"
 
-opt_parser = OptionParser(option_list=option_list);
-opt = parse_args(opt_parser);
-cpu_count=opt$task_cpus
-prefix=opt$output_prefix
-metadata_in=opt$metadata
+cpu_count=task_cpus
+prefix=output_prefix
+metadata_in=metadata
 
 obj <- createObject()
 
 #metadata MUST have a column called mcg_pct for score calculation
 #metadata MUST have a column called cov to regress coverage mias
-metadat<-read.table(opt$metadata,sep=",")
+metadat<-read.table(metadata,sep=",")
 colnames(metadat)<-c("cellid","mcg_cov","cov","mcg_pct")
 row.names(metadat)<-metadat$cellid
 obj@metadata<-metadat

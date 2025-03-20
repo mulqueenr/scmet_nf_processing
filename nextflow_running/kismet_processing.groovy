@@ -345,10 +345,10 @@ process AMETHYST_PROCESSING {
 		cat *csv > metadata.csv
 
 		Rscript /src/amethyst_init.nf.R \\
-		--input-dir ${params.outdir}/sc_metcalls \\
-		--output_prefix ${params.outname} \\
-		--metadata metadata.csv \\
-		--task_cpus ${task.cpus}
+		${params.outdir}/sc_metcalls \\
+		${params.outname} \\
+		metadata.csv \\
+		${task.cpus}
 	"""
 }
 
