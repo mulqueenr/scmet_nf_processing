@@ -49,7 +49,7 @@ with open("samplesheet_gemidx.csv", "w") as f:
     f.write("""[Settings],
 CreateFastqForIndexReads,0
 OverrideCycles,"""+args.sequencing_cycles+"""
-BarcodeMismatchesIndex1,2
+BarcodeMismatchesIndex1,1
 BarcodeMismatchesIndex2,1
 [Data],
 Sample_ID,index,index2
