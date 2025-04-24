@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 
 // Script parameters
 params.flowcellDir = "/home/rmulqueen/projects/kismet/seq/250127_RM10xMET_RYExome" //Sequencing run flowcell dir
-params.src = "/home/rmulqueen/projects/kismet/tools/scmet_nf_processing/src/"
+params.src = "/data/rmulqueen/projects/kismet/tools/scmet_nf_processing/src/"
 params.ref_index="/home/rmulqueen/ref/hg38_bsbolt" 
 
 params.sequencing_cycles="Y151;I10;U16;Y151" // Treat index 2 as UMI just for counting sake
@@ -33,6 +33,7 @@ log.info """
 		Output Prefix : ${params.outname}
 		NF Working Dir : ${workflow.launchDir}
 		Output Directory : ${params.outdir}
+		Ref Directory : ${params.ref_index}
 
 		i7 Index Library Split : ${params.i7_idx}
 		Cellranger ATAC install : ${params.cellranger}

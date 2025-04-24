@@ -102,16 +102,11 @@ nano \
 libfontconfig1-dev \
 libtiff-dev \
 screen \
-libncurses-dev
+libncurses-dev \
+python3-pip
 
 #fancy colors
 apt-get -o Dpkg::Progress-Fancy="1" install alpine-pico
-
-#install bcl-convert #might need to move or install to different directory for portability?
-#download from website https://dashboard.my.illumina.com/softwaredownload
-apt-get install -y alien dpkg-dev debhelper build-essential
-alien bcl-convert-4.3.13-2.el7.x86_64.rpm
-dpkg -i bcl-convert_4.3.13-3_amd64.deb
 
 # download, install, and update miniconda3
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -167,24 +162,10 @@ R --slave -e 'BiocManager::install(c("ggtree","universalmotif"))'
 R --slave -e 'BiocManager::install(c("BSgenome.Hsapiens.UCSC.hg38"))'
 R --slave -e 'install.packages(c("patchwork"),repos="http://cran.us.r-project.org")'
 R --slave -e 'install.packages(c("ggseqlogo"),repos="http://cran.us.r-project.org")'
+R --slave -e 'install.packages(c("optparse"),repos="http://cran.us.r-project.org")'
 
 #predownload the hg38 ref data
 wget https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_43/gencode.v43.annotation.gtf.gz
-
-#Add methyltree environment
-mamba create -n MethylTree python=3.9 --yes
-mamba activate MethylTree
-pip install poetry
-git clone https://github.com/ShouWenWang-Lab/MethylTree # get the MethylTree package
-cd MethylTree # Go to the MethylTree directory
-poetry lock
-poetry install
-cd ..
-pip install methscan
-pip install jupyterlab
-pip install h5py numpy argparse pybedtools pandas scipy tables
-python -m ipykernel install --user --name=MethylTree
-mamba deactivate
 
 pip install biopython
 
@@ -215,7 +196,7 @@ echo "export PATH='/usr/local/bin/bcl-convert/:$PATH'" >> container_bashrc
 echo "source activate base" >> container_bashrc
 
 sudo singularity build amethyst_pre.sif amethyst_pre/ 
-mv /usr/local/bin/bcl-convert/usr/bin/bcl-convert /opt/miniconda3/bin/
+
 singularity shell amethyst_pre.sif
 source /container_src/container_bashrc
 
@@ -229,12 +210,25 @@ Bootstrap: localimage
 From: /home/ubuntu/amethyst_pre
 Stage: build
 
+%environment
+	export LC_ALL=C
+
 %files
   gencode.v43.annotation.gtf.gz /container_ref/gencode.v43.annotation.gtf.gz
   737K-arc-v1.txt.gz /container_ref/737K-arc-v1.txt.gz
-  MethylTree /opt/miniconda3/condabin/envs/MethylTree
+  MethylTree /container_src/MethylTree
   BSBolt /container_src/bsbolt 
   container_bashrc /container_src/container_bashrc
+
+%runscript
+	source /container_src/container_bashrc
+	source activate base
+
+	eval "$(mamba shell hook --shell bash)"
+	mamba activate
+	mamba shell init --shell bash --root-prefix=~/.local/share/mamba
+	source ~/.bashrc
+	export PATH="/opt/miniconda3/bin:$PATH"
 
 %post
 	echo "export PATH='/opt/miniconda3/bin:$PATH'" >> $SINGULARITY_ENVIRONMENT
@@ -262,9 +256,6 @@ Stage: build
     MyLabel Amethyst Container for kismet processing v1.2
 ```
 
-
-
-.
 ## Tester!!
 ```bash
 sudo singularity build amethyst.sif amethyst.def
@@ -275,6 +266,85 @@ singularity shell amethyst.sif
 
 ```
 
+
+
+# MethylTree image
+methyltree.def
+```bash
+Bootstrap: docker
+From: ubuntu:latest
+
+%environment
+	# set up all essential environment variables
+	export LC_ALL=C
+	export PATH=/opt/miniconda3/bin:$PATH
+	export PYTHONPATH=/opt/miniconda3/lib/python3.9/:$PYTHONPATH
+	export LC_ALL=C.UTF-8
+
+%runscript
+
+	eval "$(mamba shell hook --shell bash)"
+	mamba activate
+	mamba shell init --shell bash --root-prefix=~/.local/share/mamba
+	source ~/.bashrc
+	export PATH="/opt/miniconda3/bin:$PATH"
+	mamba activate MethylTree
+
+%post
+	# update and install essential dependencies
+	apt-get -y update
+	apt-get update && apt-get install -y automake \
+	build-essential \
+	bzip2 \
+	wget \
+	git \
+	default-jre \
+	unzip \
+	zlib1g-dev \
+	parallel \
+	libglpk40 \
+	gfortran
+
+	# download, install, and update miniconda3
+	wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+	bash Miniconda3-latest-Linux-x86_64.sh -b -f -p /opt/miniconda3/
+	rm Miniconda3-latest-Linux-x86_64.sh
+
+	# install dependencies via conda
+	export PATH="/opt/miniconda3/bin:$PATH"
+	conda install -y -c conda-forge mamba 
+
+	#Add methyltree environment (in base)
+	mamba install python=3.9
+	pip install poetry
+	pip install methscan
+	pip install scikit-bio
+	git clone https://github.com/ShouWenWang-Lab/MethylTree # get the MethylTree package
+	cd MethylTree # Go to the MethylTree directory
+	poetry lock
+	poetry install
+	cd ..
+	pip install jupyterlab
+	pip install POT
+	pip install "git+https://github.com/tqdm/tqdm.git@devel#egg=tqdm"
+	pip install ete3 pyranges pyyaml
+	pip install h5py numpy argparse pybedtools pandas 
+	pip install scipy tables scanpy seaborn matplotlib cospar 
+	pip install multiprocess
+	python -m ipykernel install --user --name=MethylTree
+
+%labels
+	Author Ryan Mulqueen
+	Version v0.1
+	MyLabel MethylTree
+
+```
+
+
+```bash
+sudo singularity build methyltree.sif methyltree.def
+
+```
 # Copykit image
 
 copykit.def
@@ -343,3 +413,5 @@ From: ubuntu:latest
 sudo singularity build copykit.sif copykit.def
 
 ```
+
+
