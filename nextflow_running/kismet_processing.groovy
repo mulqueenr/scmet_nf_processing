@@ -187,10 +187,10 @@ process ALIGN_BSBOLT {
 	maxForks 100
 	publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
 	label 'amethyst'
-	containerOptions "--bind ${params.ref_index}:/ref/"
 
 	input:
 		tuple val(cellid),path(read1),path(read2)
+		path(ref)
 	output:
 		tuple val(cellid),path("*.bam"), emit: bams
 		path("*.bsbolt.log"), emit: bsbolt_log
@@ -204,7 +204,7 @@ process ALIGN_BSBOLT {
 		-t 1 -OT 1 \\
 		-UN -j \\
 		-O ${cellid} \\
-		-DB /ref/ >> ${cellid}.bsbolt.log 2>> ${cellid}.bsbolt.log
+		-DB ${ref} >> ${cellid}.bsbolt.log 2>> ${cellid}.bsbolt.log
 		"""
 }
 
@@ -386,8 +386,8 @@ workflow {
 		| ADAPTER_TRIM
 
 	//Alignment
-		ADAPTER_TRIM.out.fqs \
-		| ALIGN_BSBOLT
+		ref = Channel.fromPath(params.ref_index)
+		ALIGN_BSBOLT(ADAPTER_TRIM.out.fqs, ref)
 
 	//Mark duplicates
 		MARK_DUPLICATES(ALIGN_BSBOLT.out.bams)
