@@ -50,7 +50,7 @@ with open("samplesheet_gemidx.csv", "w") as f:
 CreateFastqForIndexReads,0
 OverrideCycles,"""+args.sequencing_cycles+"""
 BarcodeMismatchesIndex1,1
-BarcodeMismatchesIndex2,1
+BarcodeMismatchesIndex2,0
 [Data],
 Sample_ID,index,index2
 """)
