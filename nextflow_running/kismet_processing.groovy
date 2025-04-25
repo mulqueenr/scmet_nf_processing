@@ -392,10 +392,10 @@ workflow {
 		MARK_DUPLICATES(ALIGN_BSBOLT.out.bams)
 
 	//Call CG methylation
-		METHYLATION_CALL(MARK_DUPLICATES.out.dedup_bams)
+		//METHYLATION_CALL(MARK_DUPLICATES.out.dedup_bams)
 
 	//Amethyst Initiation
-		METHYLATION_CALL.out.metadata | collect | AMETHYST_PROCESSING
+		//METHYLATION_CALL.out.metadata | collect | AMETHYST_PROCESSING
 
 	//CNV CLONE CALLING
 		//MARK_DUPLICATES.out.dedup_bams | collect | CNV_CLONES
