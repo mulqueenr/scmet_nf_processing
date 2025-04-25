@@ -186,11 +186,11 @@ process ALIGN_BSBOLT {
 	//ALIGN TRIMMED READS PER CELL
 	maxForks 100
 	publishDir "${params.outdir}/reports/alignment", mode: 'copy', overwrite: true, pattern: "*.log"
+	containerOptions "--bind ${params.ref_index}:/ref/,${params.outdir}"
 	label 'amethyst'
 
 	input:
 		tuple val(cellid),path(read1),path(read2)
-		path(ref)
 	output:
 		tuple val(cellid),path("*.bam"), emit: bams
 		path("*.bsbolt.log"), emit: bsbolt_log
@@ -386,8 +386,7 @@ workflow {
 		| ADAPTER_TRIM
 
 	//Alignment
-		ref = Channel.fromPath(params.ref_index)
-		ALIGN_BSBOLT(ADAPTER_TRIM.out.fqs, ref)
+		ALIGN_BSBOLT(ADAPTER_TRIM.out.fqs)
 
 	//Mark duplicates
 		MARK_DUPLICATES(ALIGN_BSBOLT.out.bams)
