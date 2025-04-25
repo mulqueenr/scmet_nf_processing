@@ -204,7 +204,7 @@ process ALIGN_BSBOLT {
 		-t 1 -OT 1 \\
 		-UN -j \\
 		-O ${cellid} \\
-		-DB ${ref} >> ${cellid}.bsbolt.log 2>> ${cellid}.bsbolt.log
+		-DB ./ref >> ${cellid}.bsbolt.log 2>> ${cellid}.bsbolt.log
 		"""
 }
 
