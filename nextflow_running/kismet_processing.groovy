@@ -348,7 +348,8 @@ process AMETHYST_PROCESSING {
 	publishDir "${params.outdir}/reports/", mode: 'copy', overwrite: true, pattern: "metadata.csv"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}/sc_metcalls"
 	label 'amethyst'
-    
+    cpus "${params.max_cpus}"
+
 	input:
 		path(metstats)
 	output:

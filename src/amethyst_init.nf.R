@@ -1,3 +1,4 @@
+#singularity shell --bind /data/rmulqueen/projects/kismet /home/rmulqueen/singularity/amethyst.sif
 library(amethyst)
 library(rhdf5)
 library(data.table)
@@ -15,9 +16,9 @@ library(plyr)
 
 #forgot to add optparse to SIF, so just using ordered list of inputs
 args <- commandArgs(trailingOnly = TRUE)
-input_dir=args[1] #"Dir of single-cell bam files"
-output_prefix=args[2] #Prefix of output
-metadata=args[3] #"Input of metadata from METHYLATION_CALL csv output."
+input_dir=args[1] #"Dir of single-cell h5.gz files" #/data/rmulqueen/projects/kismet/data/250905_kismetv51_optimized/sc_metcalls
+output_prefix=args[2] #Prefix of output #kismet_optimized
+metadata=args[3] #"Input of metadata from METHYLATION_CALL csv output." #metadata.csv
 task_cpus=args[4] #"Integer number of cpus"
 
 cpu_count=task_cpus
@@ -31,6 +32,8 @@ obj <- createObject()
 metadat<-read.table(metadata,sep=",")
 colnames(metadat)<-c("cellid","mcg_cov","cov","mcg_pct")
 row.names(metadat)<-metadat$cellid
+metadat$mcg_pct<-as.numeric(sub("%", "", metadat$mcg_pct))
+
 obj@metadata<-metadat
 
 head(obj@metadata)

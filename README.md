@@ -10,7 +10,7 @@ mkdir -p ${outdir}
 mkdir -p ${outdir}/logs
 
 cd /data/rmulqueen/projects/kismet/ #move to project directory
-git clone https://github.com/mulqueenr/scmet_nf_processing ./tools/scmet_nf_processing #pull github repo
+git clone https://github.com/mulqueenr/scmet_nf_processing /data/rmulqueen/projects/kismet/tools/scmet_nf_processing #pull github repo
 
 nextflow ./tools/scmet_nf_processing/nextflow_running/kismet_processing.groovy \
 --flowcellDir /home/rmulqueen/projects/kismet/seq/250127_RM10xMET_RYExome \
