@@ -345,7 +345,8 @@ process AMETHYST_PROCESSING {
 	//INITIATE AMETHYST OBJECT
 	//SET H5 LOCATIONS TO OUTPUT DIRECTORY BECAUSE TEMPORARY WORK DIRECTORY IS NOT PERMANENT!
 	//Split bam file by read names
-	publishDir "${params.outdir}/reports/", mode: 'copy', overwrite: true, pattern: "metadata.csv"
+	publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "*.amethyst.rds"
+	publishDir "${params.outdir}/plots", mode: 'copy', overwrite: true, pattern: "*.pdf"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir}/sc_metcalls"
 	label 'amethyst'
     cpus "${params.max_cpus}"
@@ -353,8 +354,8 @@ process AMETHYST_PROCESSING {
 	input:
 		path(metstats)
 	output:
-		path("metadata.csv"), emit: metadata
-		path("*.metcall.log"), emit: metcall_log
+		path("*.amethyst.rds"), emit: amethyst
+		path("*pdf"), emit: amethyst_plots
 
 	script:
 	"""
