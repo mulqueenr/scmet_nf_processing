@@ -214,7 +214,7 @@ process MARK_DUPLICATES {
 	publishDir "${params.outdir}/reports/markduplicates", mode: 'copy', overwrite: true, pattern: "*.log"
 	publishDir "${params.outdir}/reports/complexity", mode: 'copy', overwrite: true, pattern: "*.complex_metrics.txt"
 	publishDir "${params.outdir}/reports/projected_size", mode: 'copy', overwrite: true, pattern: "*.projected_metrics.txt"
-
+	publishDir "${params.outdir}/reports/picard_projected_size", mode: 'copy', overwrite: true, pattern: "*.projected_metrics.picard.txt"
 	publishDir "${params.outdir}/sc_bam", mode: 'copy', overwrite: true, pattern: "*.bbrd.bam"
 	containerOptions "--bind ${params.picard}:/picard.jar"
 
@@ -254,9 +254,7 @@ process MARK_DUPLICATES {
 		#not primary alignment (0x100)
 		#read is PCR or optical duplicate (0x400)
 		#supplementary alignment (0x800)
-	"""
-	/*
-	I don't trust picards estimate library complexity. its returnning the same percent duplicates despite different library sizes
+
 		#project complexity bam, just mark duplicates
 		samtools sort -m 10G -n $bam | \\
 		samtools fixmate -p -m - - | \\
@@ -272,8 +270,8 @@ process MARK_DUPLICATES {
 
 		#format a bit
 		grep "^Unknown" ${cellid}.complex_metrics.txt | \\
-		awk -v cellid=${cellid} 'OFS="," {print cellid,\$3,\$9,\$10}' > ${cellid}.projected_metrics.txt
-	*/
+		awk -v cellid=${cellid} 'OFS="," {print cellid,\$3,\$9,\$10}' > ${cellid}.projected_metrics.picard.txt
+	"""
 }
 
 process METHYLATION_CALL {
