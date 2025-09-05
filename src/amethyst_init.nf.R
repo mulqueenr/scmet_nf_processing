@@ -76,10 +76,9 @@ cluster_by_windows<-function(obj,window_name,stepsize.=NULL,bed.=NULL,metric.="s
   print("Plotting...")
 
   p1 <- dimFeature(obj, colorBy = cluster_id, reduction = "umap") + ggtitle(paste(window_name,"Clusters"))
-  p2 <- dimFeature(obj, colorBy = sampleName, reduction = "umap") + ggtitle(paste(window_name,"Samples"))
   p3 <- dimFeature(obj, colorBy = log10(cov), pointSize = 1) + scale_color_gradientn(colors = c("black", "turquoise", "gold", "red")) + ggtitle("Coverage distribution")
   p4 <- dimFeature(obj, colorBy = mcg_pct, pointSize = 1) + scale_color_gradientn(colors = c("black", "turquoise", "gold", "red")) + ggtitle("Global %mCG distribution")
-  plt<-plot_grid(p1, p2,p3, p4,ncol=2)
+  plt<-plot_grid(p1,ggplot(),p3, p4,ncol=2)
   ggsave(plt,file=paste0(window_name,"_umap.pdf"))     
   return(obj)                                             
 }

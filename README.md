@@ -10,6 +10,7 @@ mkdir -p ${outdir}
 mkdir -p ${outdir}/logs
 
 cd /data/rmulqueen/projects/kismet/ #move to project directory
+rm -rf /data/rmulqueen/projects/kismet/tools/scmet_nf_processing
 git clone https://github.com/mulqueenr/scmet_nf_processing /data/rmulqueen/projects/kismet/tools/scmet_nf_processing #pull github repo
 
 nextflow ./tools/scmet_nf_processing/nextflow_running/kismet_processing.groovy \
