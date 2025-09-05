@@ -21,7 +21,7 @@ output_prefix=args[2] #Prefix of output #kismet_optimized
 metadata=args[3] #"Input of metadata from METHYLATION_CALL csv output." #metadata.csv
 task_cpus=args[4] #"Integer number of cpus"
 
-cpu_count=task_cpus
+cpu_count=as.integer(task_cpus)
 prefix=output_prefix
 metadata_in=metadata
 
