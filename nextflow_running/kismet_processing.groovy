@@ -122,7 +122,6 @@ process GENERATE_GEM_WHITELIST {
 
 process BCL_TO_FASTQ_ON_WHITELIST { 
 	//Generate cell level Fastq Files from BCL Files and generated white list
-	//TODO This container should be updated to be in the SIF and not local run
 	cpus "${params.max_cpus}"
 	containerOptions "--bind ${params.src}:/src/,${params.outdir},${params.outdir}/logs:/var/log/bcl-convert"
 	label 'amethyst'
@@ -390,7 +389,7 @@ workflow {
 		MARK_DUPLICATES(ALIGN_BSBOLT.out.bams)
 
 	//Call CG methylation
-		//METHYLATION_CALL(MARK_DUPLICATES.out.dedup_bams)
+		METHYLATION_CALL(MARK_DUPLICATES.out.dedup_bams)
 
 	//Amethyst Initiation
 		//METHYLATION_CALL.out.metadata | collect | AMETHYST_PROCESSING
