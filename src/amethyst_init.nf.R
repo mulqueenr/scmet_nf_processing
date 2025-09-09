@@ -18,23 +18,28 @@ library(plyr)
 args <- commandArgs(trailingOnly = TRUE)
 input_dir=args[1] #"Dir of single-cell h5.gz files" #/data/rmulqueen/projects/kismet/data/250905_kismetv51_optimized/sc_metcalls
 output_prefix=args[2] #Prefix of output #kismet_optimized
-metadata=args[3] #"Input of metadata from METHYLATION_CALL csv output." #metadata.csv
-task_cpus=args[4] #"Integer number of cpus"
+metadata_met=args[3] #"Input of metadata from METHYLATION_CALL csv output." #metadata.met.csv
+metadata_reads=args[4] #"Input of metadata from MARK_DUPLICATES csv output." #metadata.reads.csv
+task_cpus=args[5] #"Integer number of cpus"
 
 cpu_count=as.integer(task_cpus)
 prefix=output_prefix
-metadata_in=metadata
 
 obj <- createObject()
 
 #metadata MUST have a column called mcg_pct for score calculation
 #metadata MUST have a column called cov to regress coverage mias
-metadat<-read.table(metadata,sep=",")
-colnames(metadat)<-c("cellid","mcg_cov","cov","mcg_pct")
-row.names(metadat)<-metadat$cellid
-metadat$mcg_pct<-as.numeric(sub("%", "", metadat$mcg_pct))
+metadat_met<-read.table(metadata_met,sep=",")
+colnames(metadat_met)<-c("cellid","cg_cov","cov","mcg_pct")
+row.names(metadat_met)<-metadat_met$cellid
+metadat_met$mcg_pct<-as.numeric(sub("%", "", metadat_met$mcg_pct))
 
-obj@metadata<-metadat
+obj@metadata<-metadat_met
+
+#read in read coverage
+metadat_reads<-read.table(metadata_reads,sep=",")
+colnames(metadat_reads)<-c("cellid","cg_cov","cov","mcg_pct")
+row.names(metadat_reads)<-metadat_reads$cellid
 
 head(obj@metadata)
 plt<-ggplot(obj@metadata, aes(x=prefix, y = cov)) +geom_violin() + geom_jitter()

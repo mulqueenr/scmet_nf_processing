@@ -225,6 +225,7 @@ process MARK_DUPLICATES {
 		tuple val(cellid),path("*bbrd.bam"), emit: dedup_bams
 		path("*markdup.log"), emit: markdup_log
 		path("*.projected_metrics.txt"), emit: projected_log
+		path("*.projected_metrics.picard.txt"), emit: projected_picard
 
 	script:
 	"""
@@ -353,6 +354,7 @@ process AMETHYST_PROCESSING {
 
 	input:
 		path(metstats)
+		path(projstats)
 	output:
 		path("*.amethyst.rds"), emit: amethyst
 		path("*pdf"), emit: amethyst_plots
@@ -361,12 +363,11 @@ process AMETHYST_PROCESSING {
 	"""
 		source /container_src/container_bashrc
 
-		cat *csv > metadata.csv
-
 		Rscript /src/amethyst_init.nf.R \\
 		${params.outdir}/sc_metcalls \\
 		${params.outname} \\
-		metadata.csv \\
+		metadata.met.csv \\
+		metadata.reads.csv \\
 		${task.cpus}
 	"""
 }
@@ -394,7 +395,10 @@ workflow {
 		METHYLATION_CALL(MARK_DUPLICATES.out.dedup_bams)
 
 	//Amethyst Initiation
-		METHYLATION_CALL.out.metadata | collect | AMETHYST_PROCESSING
+		met_meta = METHYLATION_CALL.out.metadata | collectFile(name: 'metadata.met.csv')
+		reads_meta = MARK_DUPLICATES.out.projected_picard | collectFile(name: 'metadata.reads.csv')
+
+		AMETHYST_PROCESSING(met_meta,reads_meta)
 
 	//CNV CLONE CALLING
 		//MARK_DUPLICATES.out.dedup_bams | collect | CNV_CLONES
