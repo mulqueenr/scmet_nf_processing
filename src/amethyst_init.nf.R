@@ -38,8 +38,11 @@ obj@metadata<-metadat_met
 
 #read in read coverage
 metadat_reads<-read.table(metadata_reads,sep=",")
-colnames(metadat_reads)<-c("cellid","cg_cov","cov","mcg_pct")
+colnames(metadat_reads)<-c("cellid","READ_PAIRS_EXAMINED","PERCENT_DUPLICATION","ESTIMATED_LIBRARY_SIZE")
 row.names(metadat_reads)<-metadat_reads$cellid
+
+obj@metadata<-merge(obj@metadata,metadat_reads,by="cellid")
+row.names(obj@metadata)<-obj@metadata$cellid
 
 head(obj@metadata)
 plt<-ggplot(obj@metadata, aes(x=prefix, y = cov)) +geom_violin() + geom_jitter()
