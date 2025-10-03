@@ -9,3 +9,15 @@ bsbolt Index -IA \
 -DB ~/projects/10x_MET/ref/hg38_bsbolt
 
 ```
+
+
+Set up index for barnyard
+```bash
+
+wget "https://cf.10xgenomics.com/supp/cell-atac/refdata-cellranger-arc-GRCh38-and-GRCm39-2024-A.tar.gz"
+
+bsbolt Index -IA \
+-G  ~/ref/refdata-cellranger-arc-GRCh38-and-GRCm39-2024-A/fasta/genome.fa \
+-DB ~/ref/barnyard_bsbolt
+
+```
