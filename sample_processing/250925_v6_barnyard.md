@@ -154,28 +154,33 @@ for i in cell_id.split* ; do
 /home/rmulqueen/.local/bin/sinto filterbarcodes --bam ${bam} --cells $i -p 100 --barcodetag "CB" --outdir ./sc_dna_bam_v52 ;
 done
 
-#generate library complexity based on 10% downsample rates
-#count unique chr:start sites
+
+#use picard tools to project library size
 function proj_complexity() {
-cellid="WGS_${1::-6}"
-for i in $(seq 0.1 0.1 1.0); do
-uniq_count=$(samtools view -F 3332 -s $i $1 \
-| awk 'OFS="\t"{print $3,$4}' \
-| sort \
-| uniq -c \
-| wc -l)
-total_count=$(samtools view -F 3332 -s $i $1 | wc -l)
-echo "${cellid},${i},${total_count},${uniq_count}"; done > ${cellid}.projected_metrics.txt
+cellid="${1::-4}"
+#project complexity bam, just mark duplicates
+samtools sort -m 10G -n $1 | \
+samtools fixmate -p -m - - | \
+samtools sort -m 10G | \
+samtools markdup --mode t -s - ${cellid}.mkdup.bam
+
+java -jar /home/rmulqueen/tools/picard.jar \
+EstimateLibraryComplexity \
+MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \
+TMP_DIR="." \
+I=${cellid}.mkdup.bam \
+O=${cellid}.complex_metrics.txt
+
+#format a bit
+grep "^Unknown" ${cellid}.complex_metrics.txt | \
+awk -v cellid=${cellid} 'OFS="," {print cellid,$3,$9,$10}' > ${cellid}.projected_metrics.picard.txt
 }
+
 
 export -f proj_complexity
 parallel -j 300 proj_complexity ::: $(ls *-1.bam)
 
-#excluding reads that meet any below conditions:
-#read unmapped (0x4)
-#not primary alignment (0x100)
-#read is PCR or optical duplicate (0x400)
-#supplementary alignment (0x800)
+cat *.projected_metrics.picard.txt > sc_dna_bam_v52.projected_metrics.txt
 
 ```
 
@@ -230,22 +235,32 @@ for i in cell_id.split* ; do
 /home/rmulqueen/.local/bin/sinto filterbarcodes --bam ${bam} --cells $i -p 100 --barcodetag "CB" --outdir ./sc_dna_bam_v6 ;
 done
 
-#generate library complexity based on 10% downsample rates
-#count unique chr:start sites
+#use picard tools to project library size
 function proj_complexity() {
-cellid="WGS_${1::-6}"
-for i in $(seq 0.1 0.1 1.0); do
-uniq_count=$(samtools view -F 3332 -s $i $1 \
-| awk 'OFS="\t"{print $3,$4}' \
-| sort \
-| uniq -c \
-| wc -l)
-total_count=$(samtools view -F 3332 -s $i $1 | wc -l)
-echo "${cellid},${i},${total_count},${uniq_count}"; done > ${cellid}.projected_metrics.txt
+cellid="${1::-4}"
+#project complexity bam, just mark duplicates
+samtools sort -m 10G -n $1 | \
+samtools fixmate -p -m - - | \
+samtools sort -m 10G | \
+samtools markdup --mode t -s - ${cellid}.mkdup.bam
+
+java -jar /home/rmulqueen/tools/picard.jar \
+EstimateLibraryComplexity \
+MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \
+TMP_DIR="." \
+I=${cellid}.mkdup.bam \
+O=${cellid}.complex_metrics.txt
+
+#format a bit
+grep "^Unknown" ${cellid}.complex_metrics.txt | \
+awk -v cellid=${cellid} 'OFS="," {print cellid,$3,$9,$10}' > ${cellid}.projected_metrics.picard.txt
 }
+
 
 export -f proj_complexity
 parallel -j 300 proj_complexity ::: $(ls *-1.bam)
+
+cat *.projected_metrics.picard.txt > sc_dna_bam_v6.projected_metrics.txt
 ```
 
 
@@ -261,18 +276,30 @@ library(dplyr)
 #project complexity for cells passing QC
 dat_kismet<-do.call("rbind",lapply(list.files(path="/data/rmulqueen/projects/kismet/data/250925_kismetv6_barnyard/reports/projected_size",pattern="*projected_metrics.txt",full.names=T),function(x) read.table(x,header=F,sep=",")))
 dat_kismet$method<-"kismet"
+colnames(dat_kismet)<-c("sample","downsample_perc","total_frag","uniq_frag","method")
 
-dat_wgs<-do.call("rbind",lapply(list.files(path="/data/rmulqueen/projects/kismet/data/250925_kismetv6_barnyard/sc_dna_bam_v6/",pattern="*projected_metrics.txt",full.names=T),function(x) read.table(x,header=F,sep=",")))
-dat_wgs$method<-"wgs_v6"
+dat_v6<-read.table("/data/rmulqueen/projects/kismet/data/250925_kismetv6_barnyard/sc_dna_bam_v6/sc_dna_bam_v6.projected_metrics.txt",header=F,sep=",")
+colnames(dat_v6)<-c("sample","current_uniq_reads","projected_optimal_seq_effort","projected_saturated_fragments")
+dat_v6$current_uniq_reads<-as.numeric(dat_v6$current_uniq_reads)
+dat_v6$projected_optimal_seq_effort<-as.numeric(dat_v6$projected_optimal_seq_effort)
+dat_v6$projected_saturated_fragments<-as.numeric(dat_v6$projected_saturated_fragments)
+dat_v6$method<-"wgs_v6"
 
-dat<-rbind(dat_kismet,dat_wgs)
-colnames(dat)<-c("sample","downsample_perc","total_frag","uniq_frag","method")
+dat_v52<-read.table("/data/rmulqueen/projects/kismet/data/250925_kismetv6_barnyard/sc_dna_bam_v52/sc_dna_bam_v52.projected_metrics.txt",header=F,sep=",")
+colnames(dat_v52)<-c("sample","current_uniq_reads","projected_optimal_seq_effort","projected_saturated_fragments")
+dat_v52$current_uniq_reads<-as.numeric(dat_v52$current_uniq_reads)
+dat_v52$projected_optimal_seq_effort<-as.numeric(dat_v52$projected_optimal_seq_effort)
+dat_v52$projected_saturated_fragments<-as.numeric(dat_v52$projected_saturated_fragments)
+
+
+dat_v52$method<-"wgs_v52"
+
 
 #filter to kismet top 1000 cells
-top_cells<- as.data.frame(dat %>% filter(as.numeric(downsample_perc)==1)  %>% slice_max(n=1000,by=method,order_by=uniq_frag))
+top_cells<- as.data.frame(dat_kismet %>% filter(as.numeric(downsample_perc)==1)  %>% slice_max(n=1000,by=method,order_by=uniq_frag))
 top_cells<- top_cells$sample
 
-dat<-dat[dat$sample %in% top_cells,]
+dat_kismet<-dat_kismet[dat_kismet$sample %in% top_cells,]
 
 
 michaelis_menten_fit<-function(x){
@@ -289,7 +316,7 @@ michaelis_menten_fit<-function(x){
     return(c(x,vmax,km,km_uniq$v,current_total_reads,current_uniq_reads,method))
 }
 
-projdat<-as.data.frame(do.call("rbind",mclapply(mc.cores=100,unique(dat$sample),michaelis_menten_fit)))
+projdat<-as.data.frame(do.call("rbind",mclapply(mc.cores=100,unique(dat_kismet$sample),michaelis_menten_fit)))
 
 
 colnames(projdat)<-c("sample",
@@ -305,28 +332,20 @@ projdat$projected_saturated_fragments<-as.numeric(projdat$projected_saturated_fr
 projdat$current_total_reads<-as.numeric(projdat$current_total_reads)
 projdat$projected_reads_at_optimal_effort<-as.numeric(projdat$projected_reads_at_optimal_effort)
 
-plt1<-ggplot(projdat,aes(x=method,y=log10(projected_reads_at_optimal_effort*2),alpha=0.5,color=method))+
+dat <- rbind(dat_v6, dat_v52,projdat[,c(1,6,3,2,7)])
+
+
+plt1<-ggplot(dat,aes(x=method,y=log10(projected_saturated_fragments*2),alpha=0.5,color=method))+
 geom_jitter()+
 theme_minimal()+
 ylim(c(0,7))+
 ggtitle(paste0("50% Saturated Library Read Counts:\n","Kismet Mean: ",
-round(mean(projdat[projdat$method=="kismet",]$projected_reads_at_optimal_effort)*2),
-"\nWGS Mean: ",
-round(mean(projdat[projdat$method=="wgs_v6",]$projected_reads_at_optimal_effort)*2)))
+round(mean(dat[dat$method=="kismet",]$projected_saturated_fragments)*2),
+"\nv6 WGS Mean: ",
+round(mean(dat[dat$method=="wgs_v6",]$projected_saturated_fragments)*2),
+"\nv52 WGS Mean: ",
+round(mean(dat[dat$method=="wgs_v52",]$projected_saturated_fragments)*2)))
 ggsave(plt1,file="uniq_reads_per_method.pdf")
-
-plt2<-ggplot(projdat,aes(x=method,y=log10(projected_saturated_fragments*2),alpha=0.5,color=method))+
-geom_jitter()+
-theme_minimal()+
-ylim(c(0,7))+
-ggtitle(paste0("100% Saturated Library Read Counts:\n","Kismet Mean: ",
-round(mean(projdat[projdat$method=="kismet",]$projected_saturated_fragments)*2),
-"\nWGS Mean: ",
-round(mean(projdat[projdat$method=="wgs_v6",]$projected_saturated_fragments)*2)))
-ggsave(plt2,file="uniq_reads_per_method_sat.pdf")
-
-projdat %>% group_by(method) %>% summarize(count=n(),reads=mean(projected_saturated_fragments))
-
 
 ```
 

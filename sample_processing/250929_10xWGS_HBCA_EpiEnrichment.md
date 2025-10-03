@@ -81,23 +81,31 @@ for i in cell_id.split* ; do
 /home/rmulqueen/.local/bin/sinto filterbarcodes --bam ${bam} --cells $i -p 100 --barcodetag "CB" --outdir ./BCMHBCA67L_2h_scbams ;
 done
 
-
-#generate library complexity based on 10% downsample rates
-#count unique chr:start sites
 function proj_complexity() {
-cellid="BCMHBCA67L_${1::-6}"
-for i in $(seq 0.1 0.1 1.0); do
-uniq_count=$(samtools view -F 3332 -s $i $1 \
-| awk 'OFS="\t"{print $3,$4}' \
-| sort \
-| uniq -c \
-| wc -l)
-total_count=$(samtools view -F 3332 -s $i $1 | wc -l)
-echo "${cellid},${i},${total_count},${uniq_count}"; done > ${cellid}.projected_metrics.txt
+cellid="${1::-4}"
+#project complexity bam, just mark duplicates
+samtools sort -m 10G -n $1 | \
+samtools fixmate -p -m - - | \
+samtools sort -m 10G | \
+samtools markdup --mode t -s - ${cellid}.mkdup.bam
+
+java -jar /home/rmulqueen/tools/picard.jar \
+EstimateLibraryComplexity \
+MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \
+TMP_DIR="." \
+I=${cellid}.mkdup.bam \
+O=${cellid}.complex_metrics.txt
+
+#format a bit
+grep "^Unknown" ${cellid}.complex_metrics.txt | \
+awk -v cellid=${cellid} 'OFS="," {print cellid,$3,$9,$10}' > ${cellid}.projected_metrics.picard.txt
 }
 
+
 export -f proj_complexity
-parallel -j 300 proj_complexity ::: $(ls *-1.bam)
+parallel -j 300 proj_complexity ::: $(ls *BCMHBCA67L.bam)
+
+cat *.projected_metrics.picard.txt > BCMHBCA67L.projected_metrics.txt
 
 ```
 
@@ -128,22 +136,33 @@ for i in cell_id.split* ; do
 /home/rmulqueen/.local/bin/sinto filterbarcodes --bam ${bam} --cells $i -p 100 --barcodetag "CB" --outdir ./BCMHBCA102L_scbams ;
 done
 
-#generate library complexity based on 10% downsample rates
-#count unique chr:start sites
+#use picard tools to project library size
 function proj_complexity() {
-cellid="BCMHBCA102L_${1::-6}"
-for i in $(seq 0.1 0.1 1.0); do
-uniq_count=$(samtools view -F 3332 -s $i $1 \
-| awk 'OFS="\t"{print $3,$4}' \
-| sort \
-| uniq -c \
-| wc -l)
-total_count=$(samtools view -F 3332 -s $i $1 | wc -l)
-echo "${cellid},${i},${total_count},${uniq_count}"; done > ${cellid}.projected_metrics.txt
+cellid="${1::-4}"
+#project complexity bam, just mark duplicates
+samtools sort -m 10G -n $1 | \
+samtools fixmate -p -m - - | \
+samtools sort -m 10G | \
+samtools markdup --mode t -s - ${cellid}.mkdup.bam
+
+java -jar /home/rmulqueen/tools/picard.jar \
+EstimateLibraryComplexity \
+MAX_OPTICAL_DUPLICATE_SET_SIZE=-1 \
+TMP_DIR="." \
+I=${cellid}.mkdup.bam \
+O=${cellid}.complex_metrics.txt
+
+#format a bit
+grep "^Unknown" ${cellid}.complex_metrics.txt | \
+awk -v cellid=${cellid} 'OFS="," {print cellid,$3,$9,$10}' > ${cellid}.projected_metrics.picard.txt
 }
 
+
 export -f proj_complexity
-parallel -j 300 proj_complexity ::: $(ls *-1.bam)
+parallel -j 300 proj_complexity ::: $(ls *BCMHBCA102L.bam)
+
+cat *.projected_metrics.picard.txt > BCMHBCA102L.projected_metrics.txt
+
 ```
 
 
@@ -152,69 +171,41 @@ Project complexity
 ```R
 library(ggplot2)
 library(patchwork)
-library(drc)
-library(parallel)
 library(dplyr)
 
 #project complexity for cells passing QC
-dat_67<-do.call("rbind",lapply(list.files(path="/data/rmulqueen/projects/kismet/data/250929_10xWGS_HBCA_Epi/BCMHBCA67L_2h_scbams",pattern="*projected_metrics.txt",full.names=T),function(x) read.table(x,header=F,sep=",")))
+dat_67<-read.table(file="/data/rmulqueen/projects/kismet/data/250929_10xWGS_HBCA_Epi/BCMHBCA67L_2h_scbams/BCMHBCA67L.projected_metrics.txt",header=F,sep=",")
 dat_67$method<-"BCMHBCA67L_2h"
 
-dat_102<-do.call("rbind",lapply(list.files(path="/data/rmulqueen/projects/kismet/data/250929_10xWGS_HBCA_Epi/BCMHBCA102L_scbams",pattern="*projected_metrics.txt",full.names=T),function(x) read.table(x,header=F,sep=",")))
+dat_102<-read.table(file="/data/rmulqueen/projects/kismet/data/250929_10xWGS_HBCA_Epi/BCMHBCA102L_scbams/BCMHBCA102L.projected_metrics.txt",header=F,sep=",")
 dat_102$method<-"BCMHBCA102L"
 
 dat<-rbind(dat_67,dat_102)
-colnames(dat)<-c("sample","downsample_perc","total_frag","uniq_frag","method")
-
-#filter to top 1000 cells
-top_cells<- as.data.frame(dat %>% filter(as.numeric(downsample_perc)==1)  %>% slice_max(n=5000,by=method,order_by=uniq_frag))
-top_cells<- top_cells$sample
-
-dat<-dat[dat$sample %in% top_cells,]
+colnames(dat)<-c("sample","uniq","perc_dup","size","method")
 
 
-michaelis_menten_fit<-function(x){
-    mm<-dat[dat$sample==x,]
-    colnames(mm)<-c("cellid","downsample_perc","S","v","method")
-    model.drm <- drm(as.numeric(v) ~ as.numeric(S), data = mm, fct = MM.2())
-    km_uniq <- data.frame(S = coef(model.drm)[2])
-    km_uniq$v <- predict(model.drm, newdata = km_uniq)
-    vmax<-as.numeric(coef(model.drm)[1])
-    km<-as.numeric(coef(model.drm)[2])
-    current_total_reads<-as.numeric(mm[mm$downsample_perc==1.0,]$S)
-    current_uniq_reads<-as.numeric(mm[mm$downsample_perc==1.0,]$v)
-    method<-mm[mm$downsample_perc==1.0,]$method
-    return(c(x,vmax,km,km_uniq$v,current_total_reads,current_uniq_reads,method))
-}
-
-projdat<-as.data.frame(do.call("rbind",mclapply(mc.cores=100,unique(dat$sample),michaelis_menten_fit)))
-
-
-colnames(projdat)<-c("sample",
-"projected_saturated_fragments",
-"projected_optimal_seq_effort",
-"projected_reads_at_optimal_effort",
-"current_total_reads",
-"current_uniq_reads",
-"method")
-
-
-projdat$projected_saturated_fragments<-as.numeric(projdat$projected_saturated_fragments)
-projdat$current_total_reads<-as.numeric(projdat$current_total_reads)
-projdat$projected_reads_at_optimal_effort<-as.numeric(projdat$projected_reads_at_optimal_effort)
-
-plt1<-ggplot(projdat,aes(x=method,y=log10(projected_reads_at_optimal_effort),alpha=0.5,color=method))+
+plt1<-ggplot(dat,aes(x=method,y=log10(uniq),alpha=0.5,color=method))+
 geom_jitter()+
 theme_minimal()+
 ylim(c(0,8))+
-ggtitle(paste0("50% Saturated Library Read Counts:\n","BCMHBCA67L_2h Mean: ",
-round(mean(projdat[projdat$method=="BCMHBCA67L_2h",]$projected_reads_at_optimal_effort)),
+ggtitle(paste0("Library Current Seq:\n","BCMHBCA67L_2h Mean: ",
+round(mean(dat[dat$method=="BCMHBCA67L_2h",]$uniq)),
 "\n",
 "BCMHBCA102L Mean: ",
-round(mean(projdat[projdat$method=="BCMHBCA102L",]$projected_reads_at_optimal_effort))))
-ggsave(plt1,file="uniq_reads_per_method.pdf")
+round(mean(dat[dat$method=="BCMHBCA102L",]$uniq))))
 
-projdat %>% group_by(method) %>% summarize(count=n(),reads=mean(projected_reads_at_optimal_effort))
+plt2<-ggplot(dat,aes(x=method,y=log10(size),alpha=0.5,color=method))+
+geom_jitter()+
+theme_minimal()+
+ylim(c(0,8))+
+ggtitle(paste0("Library Size:\n","BCMHBCA67L_2h Mean: ",
+round(mean(dat[dat$method=="BCMHBCA67L_2h",]$size)),
+"\n",
+"BCMHBCA102L Mean: ",
+round(mean(dat[dat$method=="BCMHBCA102L",]$size))))
+ggsave(plt1/plt2,file="uniq_reads_per_method.pdf")
+
+dat %>% group_by(method) %>% summarize(count=n(),reads=mean(size))
 
 
 ```
@@ -224,19 +215,22 @@ projdat %>% group_by(method) %>% summarize(count=n(),reads=mean(projected_reads_
 ```bash
 singularity shell --bind /data/rmulqueen/projects/scalebio_dcis ~/singularity/amethyst.sif
 ```
+
 ```R
 library(Rsamtools)
 library(copykit)
 library(BiocParallel)
+library(circlize)
+library(dplyr)
 register(MulticoreParam(progressbar = T, workers = 100), default = T)
 
 dat_67 <- runVarbin("/data/rmulqueen/projects/kismet/data/250929_10xWGS_HBCA_Epi/BCMHBCA67L_2h_scbams",
-                    resolution="1Mb",
+                    resolution="500kb",
                     remove_Y = TRUE,
                     is_paired_end = TRUE)
 
 dat_102 <- runVarbin("/data/rmulqueen/projects/kismet/data/250929_10xWGS_HBCA_Epi/BCMHBCA102L_scbams",
-                    resolution="1Mb",
+                    resolution="500kb",
                     remove_Y = TRUE,
                     is_paired_end = TRUE)
 
@@ -245,20 +239,34 @@ dat <- runMetrics(dat)
 dat <- findAneuploidCells(dat)
 dat <- findOutliers(dat)
 
+colData(dat)$patient<-unlist(lapply(base::strsplit(row.names(colData(dat)),"[.]"),"[",2))
+
 #add sample from bam file name.
-# pdf("sample_heatmap.log2.pdf")
-# plotHeatmap(dat, assay="smoothed_bincounts",order_cells="hclust",row_split = 'outlier', n_threads = 40)
-# dev.off()
+ pdf("sample_heatmap.log2.pdf")
+ plotHeatmap(dat,order_cells="hclust",row_split = 'patient', n_threads = 40)
+ dev.off()
 
-# dat <- knnSmooth(dat)
-# dat<- runUmap(dat)
-# dat <- findSuggestedK(dat)
-# dat <- findClusters(dat)
+ dat <- knnSmooth(dat,k=8)
+ dat<- runUmap(dat)
+ dat <- findSuggestedK(dat)
+ dat <- findClusters(dat)
+dat <- calcInteger(dat, method = 'fixed', ploidy_value = 2)
+#dat <- calcInteger(dat, method = 'scquantum', assay = 'segment_ratios') #try on segment ratios?
 
-# pdf("sample_heatmap_and_umap.log2.pdf")
-# plotUmap(dat, label = c('subclones'))
-# plotHeatmap(dat, assay="smoothed_bincounts",order_cells="hclust",row_split='sample_name',label= c('subclones'), n_threads = 40)
-# dev.off()
+
+pdf("sample_heatmap_and_umap.log2.pdf")
+plotUmap(dat, label = 'patient')
+plotUmap(dat, label = 'subclones')
+plotHeatmap(dat, 
+        col=colorRamp2(breaks=c(-3,-2.5,0,2.5,3),colors=c("darkblue","blue","white","red","darkred")),
+        order_cells="hclust",
+        label= c('patient','subclones'), n_threads = 100)
+plotHeatmap(dat, assay='integer',
+        order_cells="hclust",
+        label= c('patient','subclones'), n_threads = 100)
+dev.off()
+
+ saveRDS(dat,"copykit.hbca.rds")
 
 
 
